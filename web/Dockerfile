@@ -43,6 +43,9 @@ LABEL org.opencontainers.image.source="https://github.com/rishilahoti/ashby-job-
 # Changes with every build, so the security updates below are never served from a cached layer.
 ARG CACHE_BUST=0
 RUN apt-get update && apt-get upgrade -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
+# The server only needs `node`. npm and corepack ship their own copies of dependencies (pacote,
+# sigstore, brace-expansion...) that the vulnerability scan flags, and nothing here runs them.
+RUN rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn-*
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 WORKDIR /repo
 COPY --from=build --chown=node:node /repo/web/.next/standalone ./
