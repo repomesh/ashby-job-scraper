@@ -1,0 +1,41 @@
+# Runs the web app on the Oracle server, next to (and isolated from) the other project there.
+# Lives in ~/ashby-web on that server; deploy.sh updates it. No ports are published: Cloudflare
+# reaches the app through a Tunnel that cloudflared opens from the inside.
+name: ashby-web
+
+services:
+  web:
+    image: ghcr.io/rishilahoti/ashby-job-scraper-web:${WEB_TAG:-latest}
+    restart: unless-stopped
+    env_file: web.env
+    # Caps so a traffic spike can't starve the other project's API on this 2-CPU server.
+    mem_limit: 1280m
+    cpus: 1.5
+    pids_limit: 512
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/robots.txt').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.0
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    depends_on:
+      web:
+        condition: service_healthy
+    mem_limit: 256m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

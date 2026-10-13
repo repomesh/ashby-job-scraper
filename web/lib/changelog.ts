@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: "new-home",
+    date: "2026-10-13",
+    title: "Ashby Jobs has a new home: jobs.whatrunsindia.com",
+    description:
+      "The old address redirects here, so links and bookmarks keep working. You'll need to sign in once more, and your applied and ignored jobs are still on your account. If you track jobs without signing in, those marks live in your browser at the old address and don't carry over.",
+  },
+  {
     id: "more-providers",
     date: "2026-10-06",
     title: "Keka jobs, and more companies from four job boards",

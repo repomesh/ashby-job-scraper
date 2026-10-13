@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { pushQuery } from "@/lib/push-query";
 
 export default function Pagination({
   page,
@@ -11,7 +12,6 @@ export default function Pagination({
   totalPages: number;
   total: number;
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   if (totalPages <= 1) return null;
@@ -19,7 +19,7 @@ export default function Pagination({
   function goTo(p: number) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(p));
-    router.push(`?${params.toString()}`);
+    pushQuery(`?${params.toString()}`);
   }
 
   return (

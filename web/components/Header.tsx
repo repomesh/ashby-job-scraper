@@ -52,7 +52,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <Link href="/home" className="flex items-center group" aria-label="Ashby Jobs">
             <img
-              src="/icon"
+              src="/icon.png"
               alt="Ashby Jobs"
               width={28}
               height={28}
@@ -318,6 +318,8 @@ function NavLink({
   return (
     <Link
       href={href}
+      // Viewport prefetch fetched all five header pages on every page view.
+      prefetch={false}
       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
         ${accent
           ? "text-signal hover:text-signal/80 hover:bg-signal-soft"
@@ -352,6 +354,7 @@ function MobileNavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       onClick={onNavigate}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors
         ${accent

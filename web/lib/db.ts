@@ -10,7 +10,8 @@ export function getDbPool(): Pool {
   pool = new Pool({
     connectionString: url,
     ssl: url.includes("sslmode=require") ? { rejectUnauthorized: false } : false,
-    max: 3,
+    // One long-lived server shares this pool, so it can use more than a serverless instance did.
+    max: Number(process.env.DB_POOL_MAX) || 3,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
   });
@@ -25,6 +26,7 @@ function isConnectionFailure(err: unknown): boolean {
     msg.includes("ECONNREFUSED") ||
     msg.includes("ECONNRESET") ||
     msg.includes("Connection terminated") ||
+    msg.includes("too many clients") || // the 50-connection Postgres is briefly full
     msg.includes("compute time") // Neon free-tier quota exhausted
   );
 }

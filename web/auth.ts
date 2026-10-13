@@ -17,6 +17,9 @@ interface DbUser {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PostgresAdapter(getDbPool()),
+  // Auth.js only trusts the Host header on its own on Vercel; behind Cloudflare's proxy it must
+  // be told to.
+  trustHost: true,
   // Credentials (the email-OTP provider below) doesn't support Auth.js's
   // "database" session strategy — required whenever Credentials is mixed
   // with an adapter. The adapter is still used for user/account storage.

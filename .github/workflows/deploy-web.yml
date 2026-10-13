@@ -1,0 +1,117 @@
+name: Deploy web
+
+# Builds the web app into an arm64 image (the Oracle server that runs it is arm64), scans it,
+# pushes it to GHCR, and tells the server to run it. Cloudflare sits in front of the server.
+on:
+  push:
+    branches: [main, feat/web-on-oracle]
+    # The same inputs Vercel's ignoreCommand watches, plus this file and the image recipe.
+    paths:
+      - "web/**"
+      - "package.json"
+      - "package-lock.json"
+      - "src/config/rules.json"
+      - "src/intelligence/**"
+      - "src/normalize/**"
+      - "src/utils/**"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}-web
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Built and loaded locally first (no push) so the scan below gates the push.
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: web/Dockerfile
+          push: false
+          load: true
+          platforms: linux/arm64
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          secrets: |
+            database_url=${{ secrets.DATABASE_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            CACHE_BUST=${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          limit-severities-for-sarif: true
+
+      - name: Upload scan results to the Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Push image
+        run: docker push ${{ env.IMAGE }}:${{ github.sha }}
+
+  deploy:
+    needs: build
+    # Skipped until the server is set up and its address is stored as a repository variable.
+    if: vars.WEB_VM_HOST != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      # The key can only run the server's deploy.sh (authorized_keys "command="), which takes the
+      # image tag from the ssh command and a short-lived token for pulling it from stdin.
+      - name: Deploy
+        env:
+          WEB_VM_SSH_KEY: ${{ secrets.WEB_VM_SSH_KEY }}
+          WEB_VM_HOST: ${{ vars.WEB_VM_HOST }}
+          WEB_VM_HOST_KEY: ${{ vars.WEB_VM_HOST_KEY }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$WEB_VM_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s %s\n' "$WEB_VM_HOST" "$WEB_VM_HOST_KEY" > ~/.ssh/known_hosts
+          printf '%s\n' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "ubuntu@$WEB_VM_HOST" "${{ github.sha }}"
+
+      - name: Smoke test through Cloudflare
+        run: |
+          for i in 1 2 3 4 5 6; do
+            curl -fsS -o /dev/null https://jobs.whatrunsindia.com/robots.txt && exit 0
+            sleep 10
+          done
+          exit 1

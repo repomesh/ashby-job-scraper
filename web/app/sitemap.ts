@@ -33,7 +33,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
 
     return [...staticUrls, ...jobUrls];
-  } catch {
+  } catch (err) {
+    // The deploy build sets this: failing it beats shipping a sitemap with no jobs.
+    if (process.env.REQUIRE_DB) throw err;
     return staticUrls;
   }
 }

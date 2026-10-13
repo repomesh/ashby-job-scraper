@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { pushQuery } from "@/lib/push-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PROVIDERS } from "@/lib/providers";
 import { parseLocationValues } from "@/lib/location-filter";
@@ -121,7 +122,6 @@ export default function Filters({
   locations: string[];
   tagOptions: string[];
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const setParam = useCallback(
@@ -133,9 +133,9 @@ export default function Filters({
         params.delete(key);
       }
       params.delete("page");
-      router.push(`?${params.toString()}`);
+      pushQuery(`?${params.toString()}`);
     },
-    [router, searchParams],
+    [searchParams],
   );
 
   const currentLocations = parseLocationValues(searchParams.get("location"));
@@ -180,9 +180,9 @@ export default function Filters({
         params.delete("tags");
       }
       params.delete("page");
-      router.push(`?${params.toString()}`);
+      pushQuery(`?${params.toString()}`);
     },
-    [router, searchParams],
+    [searchParams],
   );
 
   const setTagFromDropdown = (tag: string) => {
@@ -199,9 +199,9 @@ export default function Filters({
         params.delete("source");
       }
       params.delete("page");
-      router.push(`?${params.toString()}`);
+      pushQuery(`?${params.toString()}`);
     },
-    [router, searchParams],
+    [searchParams],
   );
 
   const setLocations = useCallback(
@@ -213,9 +213,9 @@ export default function Filters({
         params.delete("location");
       }
       params.delete("page");
-      router.push(`?${params.toString()}`);
+      pushQuery(`?${params.toString()}`);
     },
-    [router, searchParams],
+    [searchParams],
   );
 
   return (
@@ -323,7 +323,7 @@ export default function Filters({
       {/* Clear */}
       {hasAnyFilter && (
         <button
-          onClick={() => router.push("?")}
+          onClick={() => pushQuery("?")}
           className="h-8 px-3 text-xs text-ink-muted hover:text-ink transition-colors cursor-pointer"
         >
           Clear all
