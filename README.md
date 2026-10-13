@@ -10,8 +10,8 @@ A production-grade system that scrapes public job listings across **Ashby, Lever
 - **Automated Scraping** — Runs its own cron (default daily) inside the scraper container (no external scheduler needed)
 - **Change Detection** — Tracks new, updated, and removed postings via content hashing
 - **Intelligent Scoring** — Ranks jobs by keyword relevance, location, remote preference, department, and freshness
-- **Self-hosted Database** — Postgres running on a Docker Compose stack (see [Deployment](#deployment)), SSL-enabled, reachable over the public internet for the Vercel frontend
-- **Web Frontend** — Next.js 16 App Router (deployed on Vercel) with filtering, pagination, and per-browser apply/ignore tracking (localStorage)
+- **Self-hosted Database** — Postgres running on a Docker Compose stack (see [Deployment](#deployment)), SSL-enabled, reachable over the public internet for the web frontend
+- **Web Frontend** — Next.js 16 App Router (a container on an Oracle server, behind Cloudflare) with filtering, pagination, and per-browser apply/ignore tracking (localStorage)
 - **Stealth-Aware** — Jittered scheduling, randomized delays, browser-like headers
 - **Reports** — CLI summaries and daily Markdown reports with apply links
 
@@ -32,7 +32,7 @@ A production-grade system that scrapes public job listings across **Ashby, Lever
 └──────────────────────────────┬───────────────────────────────┘
                                │  (public internet, TLS)
 ┌──────────────────────────────┴───────────────────────────────┐
-│ Frontend (Next.js on Vercel)                                  │
+│ Frontend (Next.js container, behind Cloudflare)                │
 │                                                                │
 │ Server Components ─→ PostgreSQL queries ─→ Scored job feed    │
 │ /add page ─→ POST /api/companies ─→ Live scrape + insert      │
@@ -45,7 +45,7 @@ A production-grade system that scrapes public job listings across **Ashby, Lever
 
 Frontend and database are hosted separately:
 
-- **Frontend** — Vercel, auto-deploys on push to `main`. Set `DATABASE_URL` in Vercel's Environment Variables to the self-hosted Postgres connection string, then trigger a redeploy — env var changes don't apply to already-running deployments.
+- **Frontend** — https://jobs.whatrunsindia.com. A Next.js standalone container on an Oracle ARM server, reached through a Cloudflare Tunnel (no open ports); Cloudflare provides DNS, edge caching and the firewall. `.github/workflows/deploy-web.yml` builds the arm64 image (`web/Dockerfile`) on every push to `main`, scans it, pushes it to GHCR, and ssh-es to the server with a key that can only run `deploy/web/deploy.sh` (pull, restart, roll back if the new image isn't healthy). Server layout, the compose file and the settings it expects are in `deploy/web/`. The old Vercel address only redirects (308) to the new one.
 - **Database + scraper** — `docker-compose.yml` at repo root runs `db` (Postgres 17, SSL enabled via a self-signed cert in `./certs/`, published on `5432`), `scraper` (runs `node index.js start`, which scrapes immediately on boot then follows `CRON_SCHEDULE`, default daily), and `watchtower` (polls GHCR every 5 min, auto-pulls + recreates `scraper` on new pushes to `main` — no manual SSH/pull needed). The scraper image is built and pushed to GHCR by `.github/workflows/build-images.yml` on every push to `main`.
 - **Migrating from Neon (or any other Postgres)** — `scripts/migrate-from-neon.sh` runs `pg_dump | psql` from a source URL into the local `db` container. Run it from the deployment host after `docker compose up -d db`.
 - **One-time data backfills** (e.g. the location canonicalization migration) don't run automatically on startup — they can scan the whole `jobs` table, which shouldn't happen silently on every scraper restart. Run them once per database with `docker compose exec scraper node index.js migrate`.
@@ -139,7 +139,7 @@ Intelligence rules (keyword weights, preferred locations, etc.) are in `src/conf
 | HTTP client | Axios with exponential backoff |
 | Scheduling | node-cron with jitter, runs in-container |
 | Discovery | Common Crawl CDX API (free, no key) |
-| Frontend | Next.js 16 (App Router), TypeScript, Tailwind CSS — deployed on Vercel |
+| Frontend | Next.js 16 (App Router), TypeScript, Tailwind CSS — Docker on Oracle, behind Cloudflare |
 | CLI | Commander with chalk output |
 
 ## Project Structure
