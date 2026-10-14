@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { CHANGELOG } from "@/lib/changelog";
 
+// Cloudflare caches this page and deploys don't purge it: without this, Next's 1-year s-maxage
+// would keep each deploy's new entries hidden at the edge.
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Changelog",
   description: "What's new on Ashby Jobs.",

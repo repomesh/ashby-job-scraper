@@ -84,8 +84,9 @@ jobs:
 
   deploy:
     needs: build
-    # Skipped until the server is set up and its address is stored as a repository variable.
-    if: vars.WEB_VM_HOST != ''
+    # Skipped until the server is set up and its address is stored as a repository variable, and for
+    # manual runs from any branch other than main (those still build and scan, but never deploy).
+    if: vars.WEB_VM_HOST != '' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
