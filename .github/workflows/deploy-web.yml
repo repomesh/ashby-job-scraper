@@ -4,7 +4,7 @@ name: Deploy web
 # pushes it to GHCR, and tells the server to run it. Cloudflare sits in front of the server.
 on:
   push:
-    branches: [main, feat/web-on-oracle]
+    branches: [main]
     # The same inputs Vercel's ignoreCommand watches, plus this file and the image recipe.
     paths:
       - "web/**"
