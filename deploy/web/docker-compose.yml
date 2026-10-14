@@ -5,17 +5,20 @@ name: ashby-web
 
 services:
   web:
-    image: ghcr.io/rishilahoti/ashby-job-scraper-web:${WEB_TAG:-latest}
+    # No default: only sha tags are pushed, so a missing WEB_TAG should fail loudly, not pull "latest".
+    image: ghcr.io/rishilahoti/ashby-job-scraper-web:${WEB_TAG:?WEB_TAG is set in .env by deploy.sh}
     restart: unless-stopped
     env_file: web.env
-    # Caps so a traffic spike can't starve the other project's API on this 2-CPU server.
+    # Caps so a traffic spike can't starve the other project's API on this 2-CPU server: at most
+    # one core, so the API always has the other.
     mem_limit: 1280m
-    cpus: 1.5
+    cpus: 1.0
     pids_limit: 512
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/robots.txt').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      # /api/health runs SELECT 1, so a wrong DATABASE_URL shows up as unhealthy (and deploy.sh rolls back).
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -34,6 +37,7 @@ services:
       web:
         condition: service_healthy
     mem_limit: 256m
+    pids_limit: 128
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     logging:

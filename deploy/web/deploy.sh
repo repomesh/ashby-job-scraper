@@ -5,26 +5,43 @@
 # Pulls that image, restarts the web container, and rolls back to the previous tag if the new one
 # never becomes healthy.
 set -euo pipefail
+umask 077
 cd "$(dirname "$0")"
+# A dropped ssh connection must not leave a half-finished deploy behind.
+trap '' HUP PIPE
 
+repo=ghcr.io/rishilahoti/ashby-job-scraper-web
 tag="${SSH_ORIGINAL_COMMAND:-}"
 [[ "$tag" =~ ^[A-Za-z0-9._-]{1,100}$ ]] || { echo "refusing: bad image tag" >&2; exit 2; }
 IFS= read -r token
+# set_tag rewrites .env, so refuse to touch one that has lost the tunnel token.
+grep -q '^TUNNEL_TOKEN=.' .env || { echo "refusing: .env has no TUNNEL_TOKEN" >&2; exit 2; }
+
+# One deploy at a time: a second run's logout would pull the first one's credentials mid-pull.
+exec 9>.deploy.lock
+flock -n 9 || { echo "refusing: another deploy is running" >&2; exit 3; }
 
 printf '%s\n' "$token" | docker login ghcr.io -u rishilahoti --password-stdin >/dev/null
 trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
 
 previous="$(grep -E '^WEB_TAG=' .env | cut -d= -f2- || true)"
-set_tag() { grep -v '^WEB_TAG=' .env > .env.tmp || true; printf 'WEB_TAG=%s\n' "$1" >> .env.tmp; chmod 600 .env.tmp; mv .env.tmp .env; }
+set_tag() { grep -v '^WEB_TAG=' .env > .env.tmp || true; printf 'WEB_TAG=%s\n' "$1" >> .env.tmp; mv .env.tmp .env; }
 
+# Pull before touching .env: a failed pull then leaves the running tag recorded.
+WEB_TAG="$tag" docker compose pull web
 set_tag "$tag"
-docker compose pull web
 # Compose itself fails when the web container is unhealthy; the check below decides what to do.
 docker compose up -d --remove-orphans || echo "compose up reported a problem, checking health" >&2
 
 for _ in $(seq 1 30); do
   state="$(docker inspect --format '{{.State.Health.Status}}' ashby-web-web-1 2>/dev/null || echo none)"
-  [ "$state" = healthy ] && { echo "deployed $tag"; docker image prune -f >/dev/null; exit 0; }
+  if [ "$state" = healthy ]; then
+    # Keep this tag and the previous one (the rollback target); drop older ones of this image only.
+    docker images --format '{{.Tag}}' "$repo" | grep -vxF -e "$tag" -e "${previous:-none}" \
+      | xargs -r -I{} docker rmi "$repo:{}" >/dev/null 2>&1 || true
+    echo "deployed $tag"
+    exit 0
+  fi
   sleep 5
 done
 

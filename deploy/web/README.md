@@ -12,7 +12,13 @@ Files on the server (not in git):
   `AUTH_TRUST_HOST`, `AUTH_GOOGLE_ID/SECRET`, `AUTH_GITHUB_ID/SECRET`, `EMAIL_*`. Changing it needs
   `docker compose up -d --force-recreate web`.
 - `deploy.sh`: copied from this folder. It is the only command the GitHub Actions deploy key may run
-  (`restrict,command=...` in `~/.ssh/authorized_keys`).
+  (`restrict,command=...` in `~/.ssh/authorized_keys`). It pulls the new tag before recording it in
+  `.env`, keeps only the new and previous image tags, and rolls back if the new container never reports
+  healthy (`/api/health`, which runs `SELECT 1`).
+
+`deploy.sh` and `docker-compose.yml` are copied to the server by hand when they change: the deploy key
+can only run `deploy.sh`, so it can't update either file (on purpose). Ship the image first when a change
+depends on new app code (like a healthcheck route), then copy the files and run `docker compose up -d`.
 
 Cloudflare (zone whatrunsindia.com, host `jobs`): a proxied CNAME to `<tunnel-id>.cfargotunnel.com`, the tunnel's
 ingress `jobs.whatrunsindia.com -> http://web:3000`, Cache Rules for the public pages and `/api/jobs` (they honour
