@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
-// Never prerendered or cached: the container healthcheck and the deploy smoke test use this to
+// Never prerendered or cached: the container healthcheck and deploy.sh's public check use this to
 // prove the running app can reach Postgres, which /robots.txt (static) cannot.
 export const dynamic = "force-dynamic";
 

@@ -3,7 +3,7 @@
 # The workflow sends the image tag as the ssh command and a short-lived GitHub token on stdin:
 #   printf '%s\n' "$GITHUB_TOKEN" | ssh deploy-host "<tag>"
 # Pulls that image, restarts the web container, and rolls back to the previous tag if the new one
-# never becomes healthy.
+# never becomes healthy and reachable through Cloudflare.
 set -euo pipefail
 umask 077
 cd "$(dirname "$0")"
@@ -33,9 +33,12 @@ set_tag "$tag"
 # Compose itself fails when the web container is unhealthy; the check below decides what to do.
 docker compose up -d --remove-orphans || echo "compose up reported a problem, checking health" >&2
 
+# Healthy is not enough: a failed `compose up` can leave the old container running (and healthy), and
+# loopback can answer while Cloudflare can't reach the container. /api/health is never cached.
 for _ in $(seq 1 30); do
-  state="$(docker inspect --format '{{.State.Health.Status}}' ashby-web-web-1 2>/dev/null || echo none)"
-  if [ "$state" = healthy ]; then
+  state="$(docker inspect --format '{{.State.Health.Status}} {{.Config.Image}}' ashby-web-web-1 2>/dev/null || echo none)"
+  if [ "$state" = "healthy $repo:$tag" ] \
+    && curl -fsS --max-time 10 -o /dev/null https://jobs.whatrunsindia.com/api/health; then
     # Keep this tag and the previous one (the rollback target); drop older ones of this image only.
     docker images --format '{{.Tag}}' "$repo" | grep -vxF -e "$tag" -e "${previous:-none}" \
       | xargs -r -I{} docker rmi "$repo:{}" >/dev/null 2>&1 || true

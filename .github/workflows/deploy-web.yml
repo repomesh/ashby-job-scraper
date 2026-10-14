@@ -37,6 +37,8 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
@@ -80,7 +82,7 @@ jobs:
           sarif_file: trivy-results.sarif
 
       - name: Push image
-        run: docker push ${{ env.IMAGE }}:${{ github.sha }}
+        run: docker push "$IMAGE:$GITHUB_SHA"
 
   deploy:
     needs: build
@@ -106,15 +108,7 @@ jobs:
           printf '%s\n' "$WEB_VM_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           printf '%s %s\n' "$WEB_VM_HOST" "$WEB_VM_HOST_KEY" > ~/.ssh/known_hosts
+          # deploy.sh only reports success once the new image answers /api/health through Cloudflare,
+          # and rolls back otherwise, so a green step here means the new version is live.
           printf '%s\n' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "ubuntu@$WEB_VM_HOST" "${{ github.sha }}"
-
-      # /api/health is never cached and runs SELECT 1, so this proves the tunnel, the new container and
-      # its database connection (a cached /robots.txt would pass even if the new container were broken).
-      - name: Smoke test through Cloudflare
-        run: |
-          for i in 1 2 3 4 5 6; do
-            curl -fsS --max-time 20 -o /dev/null https://jobs.whatrunsindia.com/api/health && exit 0
-            sleep 10
-          done
-          exit 1
+            "ubuntu@$WEB_VM_HOST" "$GITHUB_SHA"

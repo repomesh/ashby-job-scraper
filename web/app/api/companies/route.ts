@@ -488,8 +488,8 @@ export async function POST(request: NextRequest) {
       jobs: { total, inserted, updated, unchanged, removed },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
   }
 }
 
@@ -514,7 +514,7 @@ export async function GET() {
     }
     return NextResponse.json({ companies: Array.from(byKey.values()) });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
   }
 }

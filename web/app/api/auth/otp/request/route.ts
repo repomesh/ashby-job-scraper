@@ -19,7 +19,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const email = String(body?.email || "").toLowerCase().trim();
-    if (!EMAIL_REGEX.test(email)) {
+    // 254 is the longest valid address (RFC 5321); checking it first also keeps the regex's
+    // backtracking bounded on huge inputs.
+    if (email.length > 254 || !EMAIL_REGEX.test(email)) {
       return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
     }
 
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
   }
 }

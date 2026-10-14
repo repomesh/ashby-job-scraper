@@ -13,8 +13,8 @@ Files on the server (not in git):
   `docker compose up -d --force-recreate web`.
 - `deploy.sh`: copied from this folder. It is the only command the GitHub Actions deploy key may run
   (`restrict,command=...` in `~/.ssh/authorized_keys`). It pulls the new tag before recording it in
-  `.env`, keeps only the new and previous image tags, and rolls back if the new container never reports
-  healthy (`/api/health`, which runs `SELECT 1`).
+  `.env`, keeps only the new and previous image tags, and rolls back unless the new image is the one running,
+  reports healthy and answers `https://jobs.whatrunsindia.com/api/health` (which runs `SELECT 1`) through Cloudflare.
 
 `deploy.sh` and `docker-compose.yml` are copied to the server by hand when they change: the deploy key
 can only run `deploy.sh`, so it can't update either file (on purpose). Ship the image first when a change
