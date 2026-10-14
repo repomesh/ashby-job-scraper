@@ -24,14 +24,14 @@ ARG NEXT_PUBLIC_SITE_URL=https://jobs.whatrunsindia.com
 # database fails instead of prerendering an empty site.
 ENV DOCKER_BUILD=1 REQUIRE_DB=1 NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 WORKDIR /repo/web
-# Two outside things fail a build now and then: prerender queries hit "too many clients" when the
-# 50-connection database happens to be full, and the Google Fonts download times out. Retry for
-# those two reasons only.
+# One outside thing fails a build now and then: prerender queries hit "too many clients" when the
+# 50-connection database happens to be full. Retry for that reason only. (Fonts are local files,
+# see app/home/page.tsx, so the build downloads nothing else.)
 RUN --mount=type=secret,id=database_url,required=true \
     export DATABASE_URL="$(cat /run/secrets/database_url)"; \
     for attempt in 1 2 3; do \
       npm run build 2>&1 | tee /tmp/build.log && exit 0; \
-      grep -q -e "too many clients" -e "next/font/google" /tmp/build.log || exit 1; \
+      grep -q "too many clients" /tmp/build.log || exit 1; \
       echo "Transient build failure (attempt $attempt), retrying in 45s"; sleep 45; \
     done; exit 1
 # The path below is where tracing from the repo root puts the server; fail loudly if it moves.

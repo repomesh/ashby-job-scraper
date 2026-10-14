@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { DM_Sans, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { getStats, getCompanies, getUserCount, getAshbyCompanies } from "@/lib/query";
 import { GitHubStarBadge } from "@/components/GitHubBadge";
 import { PROVIDER_NAMES } from "@/lib/providers";
@@ -13,8 +13,11 @@ export const revalidate = 3600;
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ashbyhq-scraper.vercel.app";
 
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["400", "500", "700"] });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+// The latin subsets of the same two Google fonts, stored in ./fonts. next/font/google fails the build
+// whenever Google answers with /l/font?kit= file URLs (vercel/next.js#99114, still open), and retrying
+// doesn't help; local files keep builds independent of Google. Each is one variable file.
+const dmSans = localFont({ src: "./fonts/dm-sans-latin.woff2", weight: "400 700", display: "swap" });
+const spaceGrotesk = localFont({ src: "./fonts/space-grotesk-latin.woff2", weight: "400 700", display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
   const [stats, companies] = await Promise.all([getStats(), getCompanies()]);
