@@ -35,20 +35,28 @@ docker compose up -d --remove-orphans || echo "compose up reported a problem, ch
 
 # Healthy is not enough: a failed `compose up` can leave the old container running (and healthy), and
 # loopback can answer while Cloudflare can't reach the container. /api/health is never cached.
-for _ in $(seq 1 30); do
-  state="$(docker inspect --format '{{.State.Health.Status}} {{.Config.Image}}' ashby-web-web-1 2>/dev/null || echo none)"
-  if [ "$state" = "healthy $repo:$tag" ] \
-    && curl -fsS --max-time 10 -o /dev/null https://jobs.whatrunsindia.com/api/health; then
-    # Keep this tag and the previous one (the rollback target); drop older ones of this image only.
-    docker images --format '{{.Tag}}' "$repo" | grep -vxF -e "$tag" -e "${previous:-none}" \
-      | xargs -r -I{} docker rmi "$repo:{}" >/dev/null 2>&1 || true
-    echo "deployed $tag"
-    exit 0
-  fi
-  sleep 5
-done
+live() {
+  [ "$(docker inspect --format '{{.State.Health.Status}} {{.Config.Image}}' ashby-web-web-1 2>/dev/null)" = "healthy $repo:$1" ] \
+    && curl -fsS --max-time 10 -o /dev/null https://jobs.whatrunsindia.com/api/health
+}
+wait_live() { for _ in $(seq 1 30); do live "$1" && return 0; sleep 5; done; return 1; }
 
-echo "new image never became healthy; going back to '${previous:-none}'" >&2
+if wait_live "$tag"; then
+  # Keep this tag and the previous one (the rollback target); drop older ones of this image only.
+  docker images --format '{{.Tag}}' "$repo" | grep -vxF -e "$tag" -e "${previous:-none}" \
+    | xargs -r -I{} docker rmi "$repo:{}" >/dev/null 2>&1 || true
+  echo "deployed $tag"
+  exit 0
+fi
+
+echo "new image never became healthy and reachable; going back to '${previous:-none}'" >&2
 docker compose logs --tail 40 web >&2 || true
-if [ -n "$previous" ]; then set_tag "$previous"; docker compose up -d --remove-orphans; fi
+[ -n "$previous" ] || exit 1
+set_tag "$previous"
+docker compose up -d --remove-orphans || true
+if wait_live "$previous"; then
+  echo "rolled back to $previous" >&2
+else
+  echo "ROLLBACK FAILED: $previous is not healthy and reachable either, the site needs a look" >&2
+fi
 exit 1

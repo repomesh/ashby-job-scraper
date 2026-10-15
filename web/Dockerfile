@@ -13,7 +13,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 
 COPY web/package.json web/package-lock.json ./web/
-RUN cd web && npm ci --legacy-peer-deps --ignore-scripts
+WORKDIR /repo/web
+RUN npm ci --legacy-peer-deps --ignore-scripts
+WORKDIR /repo
 
 COPY src ./src
 COPY web ./web
@@ -28,7 +30,7 @@ WORKDIR /repo/web
 # 50-connection database happens to be full. Retry for that reason only. (Fonts are local files,
 # see app/home/page.tsx, so the build downloads nothing else.)
 RUN --mount=type=secret,id=database_url,required=true \
-    export DATABASE_URL="$(cat /run/secrets/database_url)"; \
+    export DATABASE_URL; DATABASE_URL="$(cat /run/secrets/database_url)"; \
     for attempt in 1 2 3; do \
       npm run build 2>&1 | tee /tmp/build.log && exit 0; \
       grep -q "too many clients" /tmp/build.log || exit 1; \

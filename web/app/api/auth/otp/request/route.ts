@@ -3,9 +3,11 @@ import { query } from "@/lib/db";
 import { generateCode, storeCode } from "@/lib/otp";
 import { sendOtpEmail } from "@/lib/mailer";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { readJson } from "@/lib/read-json";
 
 const RESEND_COOLDOWN_SECONDS = 60;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Domain labels exclude dots, so there is only one way to match an address: no backtracking blow-up.
+const EMAIL_REGEX = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
 // The per-email cooldown below only stops spamming one address — nothing
 // stopped one IP from requesting codes for unlimited different emails.
 const IP_MAX_REQUESTS = 10;
@@ -17,10 +19,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
     }
 
-    const body = await request.json();
-    const email = String(body?.email || "").toLowerCase().trim();
-    // 254 is the longest valid address (RFC 5321); checking it first also keeps the regex's
-    // backtracking bounded on huge inputs.
+    const [body, error] = await readJson<{ email?: unknown }>(request);
+    if (error) return error;
+    const email = String(body.email || "").toLowerCase().trim();
+    // 254 is the longest valid address (RFC 5321).
     if (email.length > 254 || !EMAIL_REGEX.test(email)) {
       return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
     }

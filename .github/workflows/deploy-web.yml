@@ -32,9 +32,9 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 40
     permissions:
-      contents: read
-      packages: write
-      security-events: write
+      contents: read # checkout
+      packages: write # push the image to GHCR
+      security-events: write # upload the Trivy results to the Security tab
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -92,8 +92,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
-      packages: read
+      contents: read # the default; this job checks nothing out
+      packages: read # the GITHUB_TOKEN handed to deploy.sh only needs to pull the image
     steps:
       # The key can only run the server's deploy.sh (authorized_keys "command="), which takes the
       # image tag from the ssh command and a short-lived token for pulling it from stdin.
