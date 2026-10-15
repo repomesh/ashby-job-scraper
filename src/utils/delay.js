@@ -1,10 +1,5 @@
 const { setTimeout: delay } = require('node:timers/promises');
 
-function jitteredDelay(minMs, maxMs) {
-  const ms = minMs + Math.random() * (maxMs - minMs);
-  return delay(ms);
-}
-
 // Rejects when `promise` hasn't settled within `ms`. A fetch's own abort signal
 // isn't enough: on 2026-10-09 a request never settled although its signal had
 // fired and its socket was gone, and the nightly run, its cleanup and the
@@ -17,4 +12,4 @@ function timeLimit(promise, ms) {
   return Promise.race([promise, limit]).finally(() => clearTimeout(timer));
 }
 
-module.exports = { delay, jitteredDelay, timeLimit };
+module.exports = { delay, timeLimit };

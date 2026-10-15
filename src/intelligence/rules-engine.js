@@ -1,5 +1,5 @@
-// Pure scoring core, shared by the Node scraper (src/intelligence/index.js)
-// and the web app (web/lib/scoring.ts). No Node-only deps so it can be
+// Pure scoring core, shared by the Node scraper (src/store/jobs.js stores the score)
+// and the web app's +Add route (web/app/api/companies/route.ts). No Node-only deps so it can be
 // imported from either side without pulling in fs/config/logger.
 
 function escapeRegex(s) {

@@ -10,7 +10,7 @@ const { normalizeLocation } = require('../shared');
 // no host/tenant info in each job.
 function normalizeJob(raw, company) {
   // externalPath ("/job/Santa-Clara/Engineer_JR123") has slashes, but jobId
-  // must pass /jobs/[jobId] and /api/jobs/*'s ^[a-zA-Z0-9_-]{1,64}$ check.
+  // must pass /jobs/[jobId] and /api/jobs/batch's ^[a-zA-Z0-9_-]{1,64}$ check.
   // The last segment is a title slug ending in Workday's requisition id, so
   // other characters become "-" and a long title is trimmed from the front.
   const segment = (raw.externalPath || '').split('/').filter(Boolean).pop();
@@ -52,9 +52,5 @@ function normalizeJob(raw, company) {
   };
 }
 
-// The CXS jobs endpoint only ever lists live/public postings — nothing to filter out.
-function filterRaw(rawJobs) {
-  return rawJobs;
-}
-
-module.exports = { normalizeJob, filterRaw };
+// No filterRaw: the CXS jobs endpoint only ever lists live/public postings.
+module.exports = { normalizeJob };

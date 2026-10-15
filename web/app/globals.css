@@ -8,7 +8,6 @@
 
   --color-paper: #FAFAF9;
   --color-surface: #F5F5F4;
-  --color-surface-hover: #EFEFED;
   --color-ink: #0C0A09;
   --color-ink-secondary: #57534E;
   --color-ink-muted: #A8A29E;
@@ -19,14 +18,12 @@
   --color-signal-muted: #9B93E8;
   --color-positive: #16A34A;
   --color-positive-soft: #F0FDF4;
-  --color-muted-soft: #F5F5F4;
 }
 
 /* Dark theme (class on html) */
 .dark {
   --color-paper: #0C0A09;
   --color-surface: #1C1917;
-  --color-surface-hover: #292524;
   --color-ink: #FAFAF9;
   --color-ink-secondary: #A8A29E;
   --color-ink-muted: #78716C;
@@ -37,11 +34,6 @@
   --color-signal-muted: #7B70DC;
   --color-positive: #22C55E;
   --color-positive-soft: #14532D;
-  --color-muted-soft: #1C1917;
-}
-
-* {
-  box-sizing: border-box;
 }
 
 html {
@@ -59,10 +51,6 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   letter-spacing: -0.025em;
-}
-
-code, .mono {
-  font-family: var(--font-mono);
 }
 
 ::selection {

@@ -58,48 +58,43 @@ function activeFeaturedCompanies(activeCompanies: string[]): string[] {
   return FEATURED_COMPANIES.filter((c) => activeSet.has(c.toLowerCase()));
 }
 
-function buildFaqs(companyCount: number, examples: string[]): typeof FAQS_BASE {
+function faqs(count: number, examples: string[]) {
   const exampleList = examples.slice(0, 8).join(", ");
-  return FAQS_BASE.map((faq) => ({
-    ...faq,
-    a: faq.a.replace("{{examples}}", exampleList).replace("{{count}}", `${companyCount}+`),
-  }));
+  return [
+    {
+      q: "What is AshbyHQ?",
+      a: `AshbyHQ (Ashby) is a modern applicant tracking system used by leading tech startups. Companies like ${exampleList} and ${count}+ others use Ashby to manage hiring and post public job listings via its job board API.`,
+    },
+    {
+      q: "What is Lever (lever.co)?",
+      a: "Lever is another widely used applicant tracking system that many tech companies use to post public job listings via lever.co job boards. This tracker aggregates jobs from Lever alongside AshbyHQ, Greenhouse, and every other supported ATS so you can search them all in one feed.",
+    },
+    {
+      q: "What is Greenhouse?",
+      a: "Greenhouse is a popular applicant tracking system used by companies like GitLab, Coinbase, Affirm, and Robinhood to publish public job boards via boards.greenhouse.io. This tracker indexes Greenhouse postings alongside AshbyHQ, Lever, and every other supported ATS.",
+    },
+    {
+      q: `Does this track jobs from ${providerList}?`,
+      a: `Yes. This tracker pulls public job postings from ${providerList} job boards and merges them into a single searchable feed, so you don't need to check each ATS separately.`,
+    },
+    {
+      q: "Which companies use Ashby for hiring?",
+      a: `${count}+ top tech companies post jobs on AshbyHQ including ${exampleList}, and many more.`,
+    },
+    {
+      q: `How do I find all jobs posted on ${providerList}?`,
+      a: `This tracker aggregates every public job from companies on ${providerList}, scraped daily from each platform's public posting API. Browse the full feed, filter by remote, department, company, or keyword.`,
+    },
+    {
+      q: "Is this an official AshbyHQ, Lever, Greenhouse, or other ATS product?",
+      a: `No. This is an independent open-source tracker that indexes publicly available job listings from each supported ATS's public API (${providerList}). It is not affiliated with or endorsed by any of them.`,
+    },
+    {
+      q: "How often is the job data updated?",
+      a: "Jobs are scraped daily via an automated cron job. New listings, closed roles, and description changes are all tracked automatically across every supported ATS platform.",
+    },
+  ];
 }
-
-const FAQS_BASE = [
-  {
-    q: "What is AshbyHQ?",
-    a: "AshbyHQ (Ashby) is a modern applicant tracking system used by leading tech startups. Companies like {{examples}} and {{count}} others use Ashby to manage hiring and post public job listings via its job board API.",
-  },
-  {
-    q: "What is Lever (lever.co)?",
-    a: "Lever is another widely used applicant tracking system that many tech companies use to post public job listings via lever.co job boards. This tracker aggregates jobs from Lever alongside AshbyHQ, Greenhouse, and every other supported ATS so you can search them all in one feed.",
-  },
-  {
-    q: "What is Greenhouse?",
-    a: "Greenhouse is a popular applicant tracking system used by companies like GitLab, Coinbase, Affirm, and Robinhood to publish public job boards via boards.greenhouse.io. This tracker indexes Greenhouse postings alongside AshbyHQ, Lever, and every other supported ATS.",
-  },
-  {
-    q: `Does this track jobs from ${providerList}?`,
-    a: `Yes. This tracker pulls public job postings from ${providerList} job boards and merges them into a single searchable feed, so you don't need to check each ATS separately.`,
-  },
-  {
-    q: "Which companies use Ashby for hiring?",
-    a: "{{count}} top tech companies post jobs on AshbyHQ including {{examples}}, and many more.",
-  },
-  {
-    q: `How do I find all jobs posted on ${providerList}?`,
-    a: `This tracker aggregates every public job from companies on ${providerList}, scraped daily from each platform's public posting API. Browse the full feed, filter by remote, department, company, or keyword.`,
-  },
-  {
-    q: "Is this an official AshbyHQ, Lever, Greenhouse, or other ATS product?",
-    a: `No. This is an independent open-source tracker that indexes publicly available job listings from each supported ATS's public API (${providerList}). It is not affiliated with or endorsed by any of them.`,
-  },
-  {
-    q: "How often is the job data updated?",
-    a: "Jobs are scraped daily via an automated cron job. New listings, closed roles, and description changes are all tracked automatically across every supported ATS platform.",
-  },
-];
 
 export default async function HomePage() {
   const [stats, companies, userCount, ashbyCompanies] = await Promise.all([
@@ -108,8 +103,8 @@ export default async function HomePage() {
 
   const activeFeatured = activeFeaturedCompanies(companies);
   const marqueeCompanies = [...activeFeatured, ...activeFeatured];
-  // The FAQ's {{count}}/{{examples}} are all Ashby claims ("... use Ashby").
-  const faqs = buildFaqs(ashbyCompanies.length, activeFeaturedCompanies(ashbyCompanies));
+  // The FAQ's count and examples are all Ashby claims ("... use Ashby").
+  const faqList = faqs(ashbyCompanies.length, activeFeaturedCompanies(ashbyCompanies));
 
   const websiteSchema = {
     "@context": "https://schema.org",
@@ -127,7 +122,7 @@ export default async function HomePage() {
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faqs.map((f) => ({
+    mainEntity: faqList.map((f) => ({
       "@type": "Question",
       name: f.q,
       acceptedAnswer: { "@type": "Answer", text: f.a },
@@ -319,65 +314,45 @@ export default async function HomePage() {
             <div className="grid grid-cols-1 min-[481px]:grid-cols-2 min-[769px]:grid-cols-3 gap-4">
               {[
                 {
-                  icon: (
-                    <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z" />
-                    </svg>
-                  ),
+                  d: "M21 21l-4.35-4.35M17 11A6 6 0 111 11a6 6 0 0116 0z",
                   title: "Full-text search",
                   desc: "Search job titles and companies across every listing simultaneously.",
                 },
                 {
-                  icon: (
-                    <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
-                    </svg>
-                  ),
+                  d: "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064",
                   title: "Remote filter",
                   desc: `One click to show only remote-friendly roles across all ${stats.companies}+ companies.`,
                 },
                 {
-                  icon: (
-                    <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  ),
+                  d: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
                   title: `${stats.companies}+ companies`,
                   desc: `${activeFeatured.slice(0, 6).join(", ")} — all in one feed.`,
                 },
                 {
-                  icon: (
-                    <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  ),
+                  d: "M13 10V3L4 14h7v7l9-11h-7z",
                   title: "Auto-updated",
                   desc: "Scraped daily. New jobs appear fast. Closed roles are removed automatically.",
                 },
                 {
-                  icon: (
-                    <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                  ),
+                  d: "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z",
                   title: "Department & team filters",
                   desc: "Narrow to Engineering, Product, Design, Sales or any specific team name.",
                 },
                 {
-                  icon: (
-                    <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  ),
+                  d: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
                   title: "Track applications",
                   desc: "Mark jobs as applied or ignored. Never lose track of where you've applied.",
                 },
-              ].map(({ icon, title, desc }) => (
+              ].map(({ d, title, desc }) => (
                 <div
                   key={title}
                   className="bg-white border border-[#E2E8F0] rounded-[10px] py-7! px-6!"
                 >
-                  <div className="text-[#6B5FE8] mb-4 w-12 h-12 bg-[rgba(71,59,206,0.08)] rounded-[10px] flex items-center justify-center">{icon}</div>
+                  <div className="text-[#6B5FE8] mb-4 w-12 h-12 bg-[rgba(71,59,206,0.08)] rounded-[10px] flex items-center justify-center">
+                    <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
+                    </svg>
+                  </div>
                   <h3 className={`${spaceGrotesk.className} text-base font-semibold text-[#0F172A] tracking-[-0.015em] mb-2`}>
                     {title}
                   </h3>
@@ -400,10 +375,10 @@ export default async function HomePage() {
             </div>
 
             <div className="flex flex-col rounded-[10px] border border-[#E2E8F0] overflow-hidden">
-              {faqs.map((faq, i) => (
+              {faqList.map((faq, i) => (
                 <details
                   key={i}
-                  className={`group bg-white ${i < faqs.length - 1 ? "border-b border-[#E2E8F0]" : ""}`}
+                  className={`group bg-white ${i < faqList.length - 1 ? "border-b border-[#E2E8F0]" : ""}`}
                 >
                   <summary className="flex items-center justify-between py-5! px-6! cursor-pointer select-none gap-4 list-none [&::-webkit-details-marker]:hidden">
                     <span className={`${spaceGrotesk.className} text-[15px] font-semibold text-[#0F172A] tracking-[-0.01em]`}>

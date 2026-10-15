@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback, type FormEvent } from "react";
+import { useState, useRef, type FormEvent } from "react";
 import Link from "next/link";
+import { matchBoardUrl, type Source } from "@/lib/providers";
 
-type Phase = "idle" | "validating" | "scraping" | "success" | "error";
-type Source = "ashby" | "lever" | "greenhouse" | "workable" | "recruitee" | "teamtailor" | "pinpoint" | "smartrecruiters" | "workday" | "keka";
+type Phase = "idle" | "scraping" | "success" | "error";
 
 interface Result {
   company: string;
@@ -27,21 +27,6 @@ const SOURCE_META: Record<Source, { label: string; domain: string; placeholder: 
   keka: { label: "Keka", domain: "keka.com", placeholder: "https://company.keka.com/careers  or  company-slug" },
 };
 
-const URL_PATTERNS: Record<Source, RegExp> = {
-  ashby: /(?:https?:\/\/)?jobs\.ashbyhq\.com\/([a-zA-Z0-9_-]+)/,
-  lever: /(?:https?:\/\/)?jobs\.lever\.co\/([a-zA-Z0-9_-]+)/,
-  greenhouse: /(?:https?:\/\/)?(?:job-boards|boards)\.greenhouse\.io\/([a-zA-Z0-9_-]+)/,
-  workable: /(?:https?:\/\/)?apply\.workable\.com\/([a-zA-Z0-9_-]+)/,
-  recruitee: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.recruitee\.com/,
-  teamtailor: /(?:https?:\/\/)?([a-zA-Z0-9_-]+(?:\.na)?)\.teamtailor\.com/,
-  pinpoint: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.pinpointhq\.com/,
-  smartrecruiters: /(?:https?:\/\/)?jobs\.smartrecruiters\.com\/([a-zA-Z0-9_-]+)/,
-  // Only ATS here spread across per-tenant subdomains AND a numbered host (wd1-wd12)
-  // AND an arbitrary site path — 3 capture groups joined into one slug below.
-  workday: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.(wd\d+)\.myworkdayjobs\.com\/(?:[a-zA-Z]{2}-[a-zA-Z]{2}\/)?([a-zA-Z0-9_-]+)/,
-  keka: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.keka\.com/,
-};
-
 export default function AddCompanyForm() {
   const [input, setInput] = useState("");
   const [source, setSource] = useState<Source>("ashby");
@@ -50,77 +35,57 @@ export default function AddCompanyForm() {
   const [error, setError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
 
-  const extractPreview = useCallback((raw: string): string | null => {
-    const trimmed = raw.trim();
-    for (const s of Object.keys(URL_PATTERNS) as Source[]) {
-      const match = trimmed.match(URL_PATTERNS[s]);
-      if (match) return match.slice(1).filter(Boolean).join("/");
-    }
-    if (/^[a-zA-Z0-9_-]+$/.test(trimmed)) return trimmed;
-    return null;
-  }, []);
-
-  const slug = extractPreview(input);
+  const board = matchBoardUrl(input);
+  const bare = input.trim();
+  const slug = board?.slug ?? (/^[a-zA-Z0-9_-]+$/.test(bare) ? bare : null);
   const isValid = slug !== null && slug.length > 0;
-  const detectedSource = (Object.keys(URL_PATTERNS) as Source[]).find((s) =>
-    URL_PATTERNS[s].test(input.trim())
-  );
-  const effectiveSourceForHint = detectedSource || source;
+  const effectiveSourceForHint = board?.source || source;
+  const busy = phase === "scraping";
 
-  const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-      if (!isValid || phase === "validating" || phase === "scraping") return;
-      const detectedSource = (Object.keys(URL_PATTERNS) as Source[]).find((s) =>
-        URL_PATTERNS[s].test(input.trim())
-      );
-      const effectiveSource = detectedSource || source;
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!isValid || busy) return;
 
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-      setError("");
-      setResult(null);
-      setPhase("validating");
+    setError("");
+    setResult(null);
+    setPhase("scraping");
 
-      try {
-        setPhase("scraping");
+    try {
+      // `source` only applies to a bare slug; for a URL the route detects it.
+      const res = await fetch("/api/companies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: input, source }),
+        signal: controller.signal,
+      });
 
-        const res = await fetch("/api/companies", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug, source: effectiveSource }),
-          signal: controller.signal,
-        });
+      const data = await res.json();
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error || `Request failed (${res.status})`);
-          setPhase("error");
-          return;
-        }
-
-        setResult(data);
-        setPhase("success");
-      } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-        setError((err as Error).message || "Network error");
+      if (!res.ok) {
+        setError(data.error || `Request failed (${res.status})`);
         setPhase("error");
+        return;
       }
-    },
-    [isValid, phase, slug, source, input]
-  );
 
-  const reset = useCallback(() => {
+      setResult(data);
+      setPhase("success");
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      setError((err as Error).message || "Network error");
+      setPhase("error");
+    }
+  }
+
+  function reset() {
     setInput("");
     setPhase("idle");
     setResult(null);
     setError("");
-  }, []);
-
-  const busy = phase === "validating" || phase === "scraping";
+  }
 
   return (
     <div className="max-w-xl mx-auto">
@@ -278,11 +243,7 @@ export default function AddCompanyForm() {
             {busy && (
               <span className="inline-block w-3.5 h-3.5 border-2 border-paper/30 border-t-paper rounded-full animate-spin" />
             )}
-            {phase === "scraping"
-              ? "Scraping jobs..."
-              : phase === "validating"
-                ? "Validating..."
-                : "Add & Scrape"}
+            {busy ? "Scraping jobs..." : "Add & Scrape"}
           </button>
         </form>
       )}

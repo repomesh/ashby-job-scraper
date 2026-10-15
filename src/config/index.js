@@ -10,16 +10,11 @@ const rules = require('./rules.json');
 const config = {
   schedule: {
     cron: process.env.CRON_SCHEDULE || '0 0 * * *',
-    defaultFrequencyHours: parseInt(process.env.DEFAULT_FREQUENCY_HOURS, 10) || 12,
     jitterMaxMinutes: parseInt(process.env.JITTER_MAX_MINUTES, 10) || 5,
   },
 
   db: {
     url: (process.env.DATABASE_URL || '').trim(),
-  },
-
-  logging: {
-    level: process.env.LOG_LEVEL || 'info',
   },
 
   fetch: {
@@ -28,17 +23,11 @@ const config = {
       lever: { baseUrl: 'https://api.lever.co/v0/postings' },
       greenhouse: { baseUrl: 'https://boards-api.greenhouse.io/v1/boards' },
       workable: { baseUrl: 'https://apply.workable.com/api/v1/widget/accounts' },
-      recruitee: { baseUrl: 'https://recruitee.com' },
-      teamtailor: { baseUrl: 'https://teamtailor.com' },
-      pinpoint: { baseUrl: 'https://pinpointhq.com' },
       smartrecruiters: { baseUrl: 'https://api.smartrecruiters.com/v1/companies' },
     },
-    includeCompensation: true,
     maxRetries: 3,
     retryBaseMs: 1000,
     timeoutMs: 30000,
-    delayBetweenCompaniesMin: 2000,
-    delayBetweenCompaniesMax: 10000,
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
   },
 

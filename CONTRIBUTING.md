@@ -7,7 +7,7 @@ Thanks for considering contributing. This project is a full-stack job tracker: a
 1. **Add companies** — Use the `/add` page, run `node index.js discover -s ashby|greenhouse` (Common Crawl-based, verifies live before adding), or suggest new slugs.
 2. **Add a new ATS adapter** — See `src/normalize/adapters/` for the Ashby/Lever/Greenhouse pattern; a new source needs a fetch entry in `src/fetch/client.js` (`SOURCE_REQUESTS`) and a normalize adapter with the same `{ jobId, title, location, team, department, employmentType, remote, description, applyUrl, jobUrl, publishedAt, compensationSummary }` shape.
 3. **Fix bugs** — Report or fix issues in the scraper, frontend, or API.
-4. **Improve scoring** — Tweak keyword weights, location/department boosts, or freshness rules in `src/config/rules.json` and `web/lib/scoring.ts`.
+4. **Improve scoring** — Tweak keyword weights, location/department boosts, or freshness rules in `src/config/rules.json`, `src/intelligence/rules-engine.js` and `SCORE_EXPR` in `web/lib/query.ts`.
 5. **Documentation** — Improve README, INTERVIEW_GUIDE, or code comments.
 6. **Performance & reliability** — Optimize queries, caching, or Neon connection handling (including the multi-DB failover in `src/store/db.js` / `web/lib/db.ts`).
 
@@ -41,7 +41,7 @@ npx next dev -p 3000
 
 - **Backend:** `src/` (scheduler, fetch, normalize, discovery, store, diff, intelligence, notify)
 - **Frontend:** `web/app/`, `web/components/`, `web/lib/`
-- **Scoring rules:** `src/config/rules.json`, `web/lib/scoring.ts`
+- **Scoring rules:** `src/config/rules.json`, `src/intelligence/rules-engine.js` (stored score), `SCORE_EXPR` in `web/lib/query.ts` (freshness at read time)
 - **Company list:** `src/sources/registry.json` (curated seed); DB `companies` table (dynamically added via `/add` or `discover`) — `getEnabledCompaniesWithDb()` merges both, so the DB is the real source of truth beyond the initial seed
 
 ## How to Contribute
@@ -69,7 +69,7 @@ npx next dev -p 3000
 
 - One logical change per PR when possible.
 - Don’t commit `.env` or secrets; use `.env.example` for required variables.
-- If you add a new company via the registry, use the same JSON shape: `company`, `slug`, `source` (`ashby`/`lever`/`greenhouse`), `enabled`, `frequencyHours`.
+- If you add a new company via the registry, use the same JSON shape: `company`, `slug`, `source` (any adapter key in `src/normalize/index.js`).
 
 ## Code of Conduct
 

@@ -254,7 +254,7 @@ dbTest('digest jobs: only fresh postings on boards tracked before the window', a
          ('DigestOldCo', 'success', 2, 0, 0), ('DigestNewCo', 'success', 50, 0, 0)`
     );
     const since = new Date(Date.now() - 60 * 60 * 1000);
-    const data = await collectDigestData(pool, { since, companiesSince: since });
+    const data = await collectDigestData(pool, { since });
     const ours = data.candidates.filter((c) => c.company.startsWith('Digest')).map((c) => c.jobId);
     assert.deepEqual(ours, ['dg-fresh']);
     // The new board's 50-job backlog isn't counted as new jobs (CI's database

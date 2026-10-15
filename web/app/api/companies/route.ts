@@ -11,6 +11,7 @@ import { departmentGroup } from "../../../../src/normalize/departments";
 import rules from "../../../../src/config/rules.json";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
 import { readJson } from "@/lib/read-json";
+import { matchBoardUrl } from "@/lib/providers";
 
 type Source = keyof typeof ADAPTERS;
 const SOURCES = Object.keys(ADAPTERS) as Source[];
@@ -45,23 +46,6 @@ const HEADERS = {
   "Accept-Language": "en-US,en;q=0.9",
 };
 
-const URL_PATTERNS: Record<Source, RegExp> = {
-  ashby: /(?:https?:\/\/)?jobs\.ashbyhq\.com\/([a-zA-Z0-9_-]+)/,
-  lever: /(?:https?:\/\/)?jobs\.lever\.co\/([a-zA-Z0-9_-]+)/,
-  greenhouse: /(?:https?:\/\/)?(?:job-boards|boards)\.greenhouse\.io\/([a-zA-Z0-9_-]+)/,
-  workable: /(?:https?:\/\/)?apply\.workable\.com\/([a-zA-Z0-9_-]+)/,
-  recruitee: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.recruitee\.com/,
-  // North American boards live on acme.na.teamtailor.com; keep ".na" in the slug.
-  teamtailor: /(?:https?:\/\/)?([a-zA-Z0-9_-]+(?:\.na)?)\.teamtailor\.com/,
-  pinpoint: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.pinpointhq\.com/,
-  smartrecruiters: /(?:https?:\/\/)?jobs\.smartrecruiters\.com\/([a-zA-Z0-9_-]+)/,
-  // Only ATS spread across per-tenant subdomains AND a numbered host (wd1-wd12)
-  // AND an arbitrary site path — the 3 capture groups get joined into one
-  // "tenant/wdHost/site" slug below, unlike every other source's single group.
-  workday: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.(wd\d+)\.myworkdayjobs\.com\/(?:[a-zA-Z]{2}-[a-zA-Z]{2}\/)?([a-zA-Z0-9_-]+)/,
-  keka: /(?:https?:\/\/)?([a-zA-Z0-9_-]+)\.keka\.com/,
-};
-
 // SmartRecruiters/Workday identifiers are case-sensitive (e.g. "BMWDealerCareers",
 // "NVIDIAExternalCareerSite") — every other source's slug is lowercase-insensitive,
 // so this stays a small exception rather than changing the default behavior everywhere.
@@ -73,13 +57,10 @@ function extractSlugAndSource(
 ): { slug: string; source: Source } | null {
   const trimmed = input.trim();
 
-  for (const source of SOURCES) {
-    const match = trimmed.match(URL_PATTERNS[source]);
-    if (match) {
-      const joined = match.slice(1).filter(Boolean).join("/");
-      const slug = CASE_SENSITIVE_SLUG_SOURCES.includes(source) ? joined : joined.toLowerCase();
-      return { slug, source };
-    }
+  const board = matchBoardUrl(trimmed);
+  if (board) {
+    const slug = CASE_SENSITIVE_SLUG_SOURCES.includes(board.source) ? board.slug : board.slug.toLowerCase();
+    return { slug, source: board.source };
   }
 
   if (/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
@@ -93,109 +74,20 @@ function extractSlugAndSource(
   return null;
 }
 
-interface GreenhouseJob {
-  id?: number;
-  title?: string;
-  location?: { name?: string };
-  content?: string;
-  absolute_url?: string;
-  first_published?: string;
-  updated_at?: string;
-  company_name?: string;
-}
-
 type FetchResult =
   | { ok: true; jobs: unknown[]; companyName: string | null }
   | { ok: false; status: number };
 
-async function fetchAshby(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://api.ashbyhq.com/posting-api/job-board/${slug}?includeCompensation=true`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
+// One try with a 15s timeout, not src/fetch's fetchJobBoard (up to 3 tries,
+// 30s each): this route is public. `pick` returns the board's postings array and, where
+// its API has one, the company's display name.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchJson(url: string, pick: (data: any) => [jobs: unknown, name?: string]): Promise<FetchResult> {
+  const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(15000) });
   if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!data || !Array.isArray(data.jobs)) return { ok: false, status: 502 };
-  // Unlisted/draft jobs are filtered centrally by ADAPTERS.ashby.filterRaw below.
-  return { ok: true, jobs: data.jobs, companyName: data.jobBoard?.title || null };
-}
-
-async function fetchLever(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://api.lever.co/v0/postings/${slug}?mode=json`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!Array.isArray(data)) return { ok: false, status: 502 };
-  return { ok: true, jobs: data, companyName: null };
-}
-
-async function fetchGreenhouse(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://boards-api.greenhouse.io/v1/boards/${slug}/jobs?content=true`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!data || !Array.isArray(data.jobs)) return { ok: false, status: 502 };
-  const jobs = data.jobs as GreenhouseJob[];
-  return { ok: true, jobs, companyName: jobs[0]?.company_name || null };
-}
-
-async function fetchWorkable(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://apply.workable.com/api/v1/widget/accounts/${slug}?details=true`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!data || !Array.isArray(data.jobs)) return { ok: false, status: 502 };
-  return { ok: true, jobs: data.jobs, companyName: data.name || null };
-}
-
-async function fetchRecruitee(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://${slug}.recruitee.com/api/offers/`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!data || !Array.isArray(data.offers)) return { ok: false, status: 502 };
-  return { ok: true, jobs: data.offers, companyName: data.offers[0]?.company_name || null };
-}
-
-async function fetchTeamtailor(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://${slug}.teamtailor.com/jobs.json`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!data || !Array.isArray(data.items)) return { ok: false, status: 502 };
-  return { ok: true, jobs: data.items, companyName: data.title || null };
-}
-
-async function fetchPinpoint(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://${slug}.pinpointhq.com/postings.json`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!data || !Array.isArray(data.data)) return { ok: false, status: 502 };
-  return { ok: true, jobs: data.data, companyName: null };
-}
-
-async function fetchSmartRecruiters(slug: string): Promise<FetchResult> {
-  const res = await fetch(`https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=100`, {
-    headers: HEADERS,
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) return { ok: false, status: res.status };
-  const data = await res.json();
-  if (!data || !Array.isArray(data.content)) return { ok: false, status: 502 };
-  return { ok: true, jobs: data.content, companyName: data.content[0]?.company?.name || null };
+  const [jobs, name] = pick((await res.json()) ?? {});
+  if (!Array.isArray(jobs)) return { ok: false, status: 502 };
+  return { ok: true, jobs, companyName: name || null };
 }
 
 const WORKDAY_PAGE_SIZE = 20; // API-enforced max per page (HTTP 400 above it)
@@ -263,35 +155,39 @@ const SOURCE_CONFIG: Record<
   }
 > = {
   ashby: {
-    fetch: fetchAshby,
+    // Unlisted/draft jobs are filtered centrally by ADAPTERS.ashby.filterRaw below.
+    fetch: (slug) =>
+      fetchJson(`https://api.ashbyhq.com/posting-api/job-board/${slug}?includeCompensation=true`, (d) => [d.jobs, d.jobBoard?.title]),
     boardUrl: (slug) => `https://jobs.ashbyhq.com/${slug}`,
   },
   lever: {
-    fetch: fetchLever,
+    fetch: (slug) => fetchJson(`https://api.lever.co/v0/postings/${slug}?mode=json`, (d) => [d]),
     boardUrl: (slug) => `https://jobs.lever.co/${slug}`,
   },
   greenhouse: {
-    fetch: fetchGreenhouse,
+    fetch: (slug) =>
+      fetchJson(`https://boards-api.greenhouse.io/v1/boards/${slug}/jobs?content=true`, (d) => [d.jobs, d.jobs?.[0]?.company_name]),
     boardUrl: (slug) => `https://job-boards.greenhouse.io/${slug}`,
   },
   workable: {
-    fetch: fetchWorkable,
+    fetch: (slug) => fetchJson(`https://apply.workable.com/api/v1/widget/accounts/${slug}?details=true`, (d) => [d.jobs, d.name]),
     boardUrl: (slug) => `https://apply.workable.com/${slug}`,
   },
   recruitee: {
-    fetch: fetchRecruitee,
+    fetch: (slug) => fetchJson(`https://${slug}.recruitee.com/api/offers/`, (d) => [d.offers, d.offers?.[0]?.company_name]),
     boardUrl: (slug) => `https://${slug}.recruitee.com`,
   },
   teamtailor: {
-    fetch: fetchTeamtailor,
+    fetch: (slug) => fetchJson(`https://${slug}.teamtailor.com/jobs.json`, (d) => [d.items, d.title]),
     boardUrl: (slug) => `https://${slug}.teamtailor.com`,
   },
   pinpoint: {
-    fetch: fetchPinpoint,
+    fetch: (slug) => fetchJson(`https://${slug}.pinpointhq.com/postings.json`, (d) => [d.data]),
     boardUrl: (slug) => `https://${slug}.pinpointhq.com`,
   },
   smartrecruiters: {
-    fetch: fetchSmartRecruiters,
+    fetch: (slug) =>
+      fetchJson(`https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=100`, (d) => [d.content, d.content?.[0]?.company?.name]),
     boardUrl: (slug) => `https://jobs.smartrecruiters.com/${slug}`,
   },
   workday: {
@@ -382,7 +278,7 @@ export async function POST(request: NextRequest) {
     // Keyed by jobId: a multi-row upsert can't touch the same row twice.
     const byId = new Map<string, NormalizedJob>();
     const adapter = ADAPTERS[source];
-    for (const raw of adapter.filterRaw(result.jobs)) {
+    for (const raw of "filterRaw" in adapter ? adapter.filterRaw(result.jobs) : result.jobs) {
       const job = adapter.normalizeJob(raw, companyNameForJobs) as NormalizedJob | null;
       if (job) byId.set(job.jobId, job);
     }
@@ -489,32 +385,6 @@ export async function POST(request: NextRequest) {
       alreadyExisted: alreadyExists,
       jobs: { total, inserted, updated, unchanged, removed },
     });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
-  }
-}
-
-export async function GET() {
-  try {
-    const { rows } = await query(
-      `SELECT c.name, c.slug, c.source, c.last_scraped_at,
-              COUNT(j.id)::int as job_count
-       FROM companies c
-       LEFT JOIN jobs j ON j.company = c.name AND j.source = c.source AND j.is_active = TRUE
-       GROUP BY c.id, c.name, c.slug, c.source, c.last_scraped_at
-       ORDER BY c.name`
-    );
-    const byKey = new Map<string, (typeof rows)[0]>();
-    for (const r of rows) {
-      const key = `${r.source}:${r.slug?.toLowerCase() ?? ""}`;
-      if (!byKey.has(key)) byKey.set(key, r);
-      else {
-        const existing = byKey.get(key)!;
-        if (Number(r.job_count) > Number(existing.job_count)) byKey.set(key, r);
-      }
-    }
-    return NextResponse.json({ companies: Array.from(byKey.values()) });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });

@@ -57,9 +57,5 @@ function normalizeJob(raw, company) {
   };
 }
 
-// Lever's postings endpoint already only returns published, listed postings.
-function filterRaw(rawJobs) {
-  return rawJobs;
-}
-
-module.exports = { normalizeJob, filterRaw };
+// No filterRaw: Lever's postings endpoint already only returns published, listed postings.
+module.exports = { normalizeJob };

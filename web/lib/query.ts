@@ -1,8 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { query } from "./db";
-import { scoreJob } from "./scoring";
 import rulesData from "../../src/config/rules.json";
-import { DEPARTMENT_GROUPS } from "../../src/normalize/departments";
 import { type SqlParam, pushParam, buildSearchSql, tsquerySql } from "./search-terms";
 import type {
   Job,
@@ -24,7 +22,7 @@ const SCORE_EXPR =
     ? `(base_score + CASE WHEN published_at >= date_trunc('day', NOW()) - INTERVAL '${FRESHNESS_HOURS} hours' THEN ${FRESHNESS_BOOST} ELSE 0 END)`
     : "base_score";
 
-type ScoredJobRow = JobRow & { base_score: number; matched_keywords: string[]; computed_score: string | number; search_rank?: number };
+type ScoredJobRow = JobRow & { base_score: number; matched_keywords: string[]; computed_score: string | number };
 
 const LIST_COLUMNS = `
   id, job_id, company, source, title, location, team, department,
@@ -35,15 +33,7 @@ const LIST_COLUMNS = `
 `;
 
 // No description in bulk queries — halves row size (~440 bytes vs ~940).
-// Description is stripped from list output by stripForList anyway.
-// Scoring still uses title/company/employment_type for keyword tags.
-const LIST_COLUMNS_BULK = `
-  id, job_id, company, source, title, location, team, department,
-  employment_type, remote, ''::text AS description, apply_url, job_url,
-  published_at, scraped_at, compensation_summary,
-  compensation_min, compensation_max, compensation_currency, compensation_interval, content_hash,
-  is_active, created_at, updated_at
-`;
+const LIST_COLUMNS_BULK = LIST_COLUMNS.replace("description,", "''::text AS description,");
 
 // --- Row mapping ---
 
@@ -78,10 +68,6 @@ function rowToJob(row: JobRow): Job {
   };
 }
 
-function stripForList(job: JobWithScore): JobWithScore {
-  return { ...job, description: "" };
-}
-
 function rowToJobWithScore(row: ScoredJobRow): JobWithScore {
   return {
     ...rowToJob(row),
@@ -95,26 +81,6 @@ function applyCanonicalNames(jobs: JobWithScore[], canonicalRecord: Record<strin
     const key = j.company?.trim().toLowerCase();
     if (key && canonicalRecord[key]) j.company = canonicalRecord[key];
   }
-}
-
-function dedupeRowsByJobId<T extends JobRow>(rows: T[], preferredCompany: string): T[] {
-  const preferred = preferredCompany.trim().toLowerCase();
-  const byId = new Map<string, T>();
-  for (const r of rows) {
-    const id = r.job_id;
-    const existing = byId.get(id);
-    if (!existing) {
-      byId.set(id, r);
-    } else {
-      const rMatch = r.company?.trim().toLowerCase() === preferred;
-      const exMatch = existing.company?.trim().toLowerCase() === preferred;
-      if (rMatch && !exMatch) byId.set(id, r);
-    }
-  }
-  const canonical = preferredCompany.trim();
-  return Array.from(byId.values()).map((r) =>
-    r.company?.trim().toLowerCase() === preferred ? r : { ...r, company: canonical }
-  );
 }
 
 // Serves the last successful result when the DB is unreachable (e.g. Neon
@@ -159,19 +125,6 @@ const getCanonicalCompanyNamesRecord = withStaleFallback(unstable_cache(
 
 // --- Public API ---
 
-function sortInMemory(scored: JobWithScore[], sort: JobFilters["sort"]): void {
-  switch (sort) {
-    case "newest":
-      scored.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-      break;
-    case "oldest":
-      scored.sort((a, b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
-      break;
-    default:
-      scored.sort((a, b) => b.score - a.score);
-  }
-}
-
 // How well a job's title/company match the search box text; higher is
 // better, 0 when only other fields matched (those then follow by score).
 // title_tsv, not search_tsv: it's small and stored in the row, while ranking
@@ -191,8 +144,6 @@ interface FilterSpec {
 
 const FILTER_SPECS: FilterSpec[] = [
   {
-    // Kept first: getCachedJobsPage's single-company branch assumes its
-    // param lands at $1 for the ORDER BY tie-break.
     active: (f) => !!f.company,
     sql: (f, params) => `LOWER(TRIM(company)) = LOWER(TRIM(${pushParam(params, f.company!)}))`,
   },
@@ -261,37 +212,14 @@ const getCachedJobsPage = unstable_cache(
     if (spec.active(filters)) wheres.push(spec.sql(filters, params));
   }
 
-  const where = `WHERE ${wheres.join(" AND ")}`;
+  let from = `jobs WHERE ${wheres.join(" AND ")}`;
+  if (filters.company) {
+    // A job_id can exist under several company-name variants: list it once,
+    // preferring the row stored under the exact name.
+    from = `(SELECT DISTINCT ON (job_id) * FROM ${from}
+      ORDER BY job_id, CASE WHEN TRIM(company) = TRIM(${pushParam(params, filters.company)}) THEN 0 ELSE 1 END, published_at DESC NULLS LAST) j`;
+  }
   const selectCols = `${LIST_COLUMNS_BULK}, base_score, matched_keywords, ${SCORE_EXPR} AS computed_score`;
-
-    if (filters.company) {
-      // Single-company result set is small and needs job_id dedup across name
-      // variants before pagination — fetch it whole (bounded, cheap) rather
-      // than pushing LIMIT/OFFSET.
-      const orderBy = `ORDER BY job_id, CASE WHEN TRIM(company) = TRIM($1) THEN 0 ELSE 1 END, published_at DESC NULLS LAST`;
-      // Search + default sort: relevance first, same as the general path below.
-      const rankBySearch = !!filters.search && filters.sort !== "newest" && filters.sort !== "oldest";
-      const rankCol = rankBySearch ? `, ${searchRankSql(params, filters.search!)} AS search_rank` : "";
-      const { rows: rawRows } = await query<ScoredJobRow>(
-        `SELECT ${selectCols}${rankCol} FROM jobs ${where} ${orderBy}`,
-        params
-      );
-      const canonicalRecord = await getCanonicalCompanyNamesRecord();
-      const displayName = canonicalRecord[filters.company.trim().toLowerCase()] ?? filters.company.trim();
-      const rows = dedupeRowsByJobId(rawRows, displayName);
-      const scored = rows.map(rowToJobWithScore);
-      applyCanonicalNames(scored, canonicalRecord);
-      sortInMemory(scored, filters.sort);
-      if (rankBySearch) {
-        const rank = new Map(rows.map((r) => [r.job_id, Number(r.search_rank)]));
-        // Stable sort: equally relevant jobs keep the score order from above.
-        scored.sort((a, b) => rank.get(b.jobId)! - rank.get(a.jobId)!);
-      }
-
-      const total = scored.length;
-      const paginated = scored.slice(offset, offset + limit).map(stripForList);
-      return { data: paginated, total, page, totalPages: Math.ceil(total / limit) };
-    }
 
     // Own copy of params: the relevance rank adds one only the data query
     // uses, and an unused param would break the COUNT query.
@@ -309,24 +237,22 @@ const getCachedJobsPage = unstable_cache(
 
     const [dataResult, countResult] = await Promise.all([
       query<ScoredJobRow>(
-        `SELECT ${selectCols} FROM jobs ${where} ${orderBy} LIMIT ${pushParam(dataParams, limit)} OFFSET ${pushParam(dataParams, offset)}`,
+        `SELECT ${selectCols} FROM ${from} ${orderBy} LIMIT ${pushParam(dataParams, limit)} OFFSET ${pushParam(dataParams, offset)}`,
         dataParams
       ),
-      query<{ count: string }>(`SELECT COUNT(*) FROM jobs ${where}`, params),
+      query<{ count: string }>(`SELECT COUNT(*) FROM ${from}`, params),
     ]);
 
     const total = Number(countResult.rows[0]?.count ?? 0);
     const scored = dataResult.rows.map(rowToJobWithScore);
     const canonicalRecord = await getCanonicalCompanyNamesRecord();
     applyCanonicalNames(scored, canonicalRecord);
-    const paginated = scored.map(stripForList);
 
-    return { data: paginated, total, page, totalPages: Math.ceil(total / limit) };
+    return { data: scored, total, page, totalPages: Math.ceil(total / limit) };
   },
-  // v5: C++/C#/IT fall back to a literal title match, dotted words (Node.js)
-  // are split on both sides, and partial title matches now rank — don't
-  // serve v4's stale result sets.
-  ["jobs-page-v5"],
+  // v6: a company's jobs are deduped and sorted in SQL like every other
+  // view, so ties order differently — don't serve v5's result sets.
+  ["jobs-page-v6"],
   { revalidate: CACHE_REVALIDATE }
 );
 
@@ -350,19 +276,19 @@ export async function getJobs(
 // Throws when the DB is unreachable: the ISR job page then keeps serving its
 // last good render instead of caching a 404 for a job that exists.
 export async function getJobById(jobId: string): Promise<JobWithScore | null> {
-  const { rows } = await query<JobRow>(
-    `SELECT ${LIST_COLUMNS} FROM jobs WHERE job_id = $1`,
+  const { rows } = await query<ScoredJobRow>(
+    `SELECT ${LIST_COLUMNS}, base_score, matched_keywords, ${SCORE_EXPR} AS computed_score FROM jobs WHERE job_id = $1`,
     [jobId]
   );
   if (rows.length === 0) return null;
-  return scoreJob(rowToJob(rows[0]));
+  return rowToJobWithScore(rows[0]);
 }
 
 // No is_active filter — this backs the Applied/Ignored pages, which must
 // still show a job someone marked before it closed (JobRow flags !isActive
 // as "Closed" rather than silently dropping it from the list). DISTINCT ON:
-// a job_id can exist under several company-name variants (see
-// dedupeRowsByJobId) — show one, preferring a still-active copy.
+// a job_id can exist under several company-name variants — show one,
+// preferring a still-active copy.
 export async function getJobsByIds(jobIds: string[]): Promise<JobWithScore[]> {
   if (jobIds.length === 0) return [];
   // The stored score and tags, like the feed: re-scoring here ran on the blanked description
@@ -374,7 +300,7 @@ export async function getJobsByIds(jobIds: string[]): Promise<JobWithScore[]> {
      ORDER BY job_id, is_active DESC, updated_at DESC`,
     [jobIds]
   );
-  return rows.map((r) => stripForList(rowToJobWithScore(r)));
+  return rows.map(rowToJobWithScore);
 }
 
 export const getCompanies = withStaleFallback(unstable_cache(
@@ -444,12 +370,6 @@ export const getUserCount = withStaleFallback(unstable_cache(
   ["user-count"],
   { revalidate: CACHE_REVALIDATE }
 ), 0);
-
-// The fixed groups jobs are sorted into (src/normalize/departments.js), not
-// the thousands of raw department names — so no query.
-export async function getDepartments(): Promise<string[]> {
-  return DEPARTMENT_GROUPS;
-}
 
 export const getLocations = withStaleFallback(unstable_cache(
   async (): Promise<string[]> => {

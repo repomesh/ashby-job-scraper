@@ -24,8 +24,7 @@ function normalizeResponse(apiResponse, company, source = 'ashby') {
     return [];
   }
 
-  const jobs = adapter
-    .filterRaw(apiResponse.jobs)
+  const jobs = (adapter.filterRaw?.(apiResponse.jobs) ?? apiResponse.jobs)
     .map(j => adapter.normalizeJob(j, company))
     .filter(Boolean);
 

@@ -7,15 +7,6 @@ const { departmentGroup, DEPARTMENT_RULES_VERSION } = require('../normalize/depa
 
 const MAX_SNAPSHOTS_PER_JOB = 2;
 
-async function getActiveJobIdsForCompany(company) {
-  const pool = getPool();
-  const { rows } = await pool.query(
-    'SELECT job_id, title, location, team, department, employment_type, remote, apply_url, job_url FROM jobs WHERE company = $1 AND is_active = TRUE',
-    [company]
-  );
-  return rows;
-}
-
 // Cheap lookup used to skip re-sending unchanged descriptions over the wire.
 async function getContentHashesForCompany(company) {
   const pool = getPool();
@@ -34,20 +25,6 @@ async function touchJob(company, jobId, scrapedAt) {
      WHERE company = $2 AND job_id = $3`,
     [scrapedAt, company, jobId]
   );
-}
-
-async function getActiveJobsForCompany(company) {
-  const pool = getPool();
-  const { rows } = await pool.query(
-    `SELECT job_id, company, source, title, location, team, department,
-            employment_type, remote, description, apply_url, job_url,
-            published_at, scraped_at, compensation_summary,
-            compensation_min, compensation_max, compensation_currency, compensation_interval, content_hash,
-            is_active, status, created_at, updated_at
-     FROM jobs WHERE company = $1 AND is_active = TRUE`,
-    [company]
-  );
-  return rows;
 }
 
 async function upsertJob(job) {
@@ -117,38 +94,25 @@ async function upsertJob(job) {
   return 'updated';
 }
 
+// Deactivates the company's active jobs missing from this scrape and returns
+// them shaped like normalized jobs, for the JOB_REMOVED events.
 async function markRemovedJobs(company, activeJobIds) {
   const pool = getPool();
-  const currentActive = await getActiveJobIdsForCompany(company);
-  const activeSet = new Set(activeJobIds);
-  const removedRows = currentActive.filter(j => !activeSet.has(j.job_id));
-
-  if (removedRows.length === 0) return [];
-
-  const removedJobIds = removedRows.map(j => j.job_id);
-
-  await pool.query(
+  const { rows } = await pool.query(
     `UPDATE jobs
        SET is_active = FALSE, updated_at = NOW()
      WHERE company = $1
-       AND job_id = ANY($2::text[])`,
-    [company, removedJobIds]
+       AND is_active = TRUE
+       AND NOT (job_id = ANY($2::text[]))
+     RETURNING job_id AS "jobId", company, title, location, team, department,
+               employment_type AS "employmentType", remote,
+               apply_url AS "applyUrl", job_url AS "jobUrl"`,
+    [company, activeJobIds]
   );
 
-  logger.debug(`Marked ${removedRows.length} jobs as removed for ${company}`);
+  if (rows.length > 0) logger.debug(`Marked ${rows.length} jobs as removed for ${company}`);
 
-  return removedRows.map(row => ({
-    job_id: row.job_id,
-    company,
-    title: row.title,
-    location: row.location,
-    team: row.team,
-    department: row.department,
-    employment_type: row.employment_type,
-    remote: Boolean(row.remote),
-    apply_url: row.apply_url,
-    job_url: row.job_url,
-  }));
+  return rows;
 }
 
 async function saveSnapshot(job) {
@@ -186,11 +150,13 @@ async function getAllActiveJobs() {
   const pool = getPool();
   const { rows } = await pool.query(
     `SELECT
-       job_id, company, source, title, location, team, department,
-       employment_type, remote,
+       job_id AS "jobId", company, source, title, location, team, department,
+       employment_type AS "employmentType", remote,
        LEFT(description, 500) AS description,
-       apply_url, job_url, published_at, compensation_summary,
-       compensation_min, compensation_max, compensation_currency, compensation_interval
+       apply_url AS "applyUrl", job_url AS "jobUrl", published_at AS "publishedAt",
+       compensation_summary AS "compensationSummary",
+       compensation_min AS "compensationMin", compensation_max AS "compensationMax",
+       compensation_currency AS "compensationCurrency", compensation_interval AS "compensationInterval"
      FROM jobs
      WHERE is_active = TRUE`
   );
@@ -296,8 +262,6 @@ async function cleanupOldInactiveJobs(retentionDays = 30) {
 }
 
 module.exports = {
-  getActiveJobsForCompany,
-  getActiveJobIdsForCompany,
   getContentHashesForCompany,
   touchJob,
   upsertJob,

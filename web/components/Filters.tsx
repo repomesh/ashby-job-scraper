@@ -2,9 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { pushQuery } from "@/lib/push-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { PROVIDERS } from "@/lib/providers";
 import { parseLocationValues } from "@/lib/location-filter";
+import { useCloseOnOutside } from "@/lib/useCloseOnOutside";
 
 function ChecklistDropdown({
   label,
@@ -21,14 +22,7 @@ function ChecklistDropdown({
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: PointerEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
+  useCloseOnOutside(ref, open, setOpen);
 
   const toggle = (value: string) => {
     onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
@@ -58,21 +52,11 @@ function ChecklistDropdown({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={`max-w-32.5 px-2 text-sm bg-surface border rounded-md focus:outline-none
-                    focus:border-edge-strong cursor-pointer flex items-center justify-between gap-1.5
+        className={`max-w-32.5 pl-2 pr-7.5 text-sm bg-surface border rounded-md focus:outline-none
+                    focus:border-edge-strong cursor-pointer flex items-center
           ${selected.length > 0 ? "border-edge-strong text-ink" : "border-edge text-ink-secondary hover:border-edge-strong"}`}
       >
         <span className="truncate">{buttonLabel}</span>
-        <svg
-          className="w-4 h-4 shrink-0 opacity-0"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={4}
-          aria-hidden
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
       </button>
       {open && (
         <div
@@ -124,19 +108,13 @@ export default function Filters({
 }) {
   const searchParams = useSearchParams();
 
-  const setParam = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      params.delete("page");
-      pushQuery(`?${params.toString()}`);
-    },
-    [searchParams],
-  );
+  const setParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    params.delete("page");
+    pushQuery(`?${params.toString()}`);
+  };
 
   const currentLocations = parseLocationValues(searchParams.get("location"));
   // Same comma-list format as location.
@@ -171,53 +149,6 @@ export default function Filters({
     current.tags.length > 0 ||
     current.sort !== "score";
 
-  const setTags = useCallback(
-    (tags: string[]) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (tags.length > 0) {
-        params.set("tags", tags.join(","));
-      } else {
-        params.delete("tags");
-      }
-      params.delete("page");
-      pushQuery(`?${params.toString()}`);
-    },
-    [searchParams],
-  );
-
-  const setTagFromDropdown = (tag: string) => {
-    if (!tag) setTags([]);
-    else setTags([tag.toLowerCase()]);
-  };
-
-  const setSources = useCallback(
-    (sources: string[]) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (sources.length > 0) {
-        params.set("source", sources.join(","));
-      } else {
-        params.delete("source");
-      }
-      params.delete("page");
-      pushQuery(`?${params.toString()}`);
-    },
-    [searchParams],
-  );
-
-  const setLocations = useCallback(
-    (locations: string[]) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (locations.length > 0) {
-        params.set("location", locations.join(","));
-      } else {
-        params.delete("location");
-      }
-      params.delete("page");
-      pushQuery(`?${params.toString()}`);
-    },
-    [searchParams],
-  );
-
   return (
     <div
       className="flex flex-wrap justify-start items-start gap-2 pt-4 border-b border-edge"
@@ -251,7 +182,7 @@ export default function Filters({
         label="All providers"
         options={PROVIDERS}
         selected={current.source}
-        onChange={setSources}
+        onChange={(next) => setParam("source", next.join(","))}
       />
 
       {/* Department — searchable checklist */}
@@ -267,13 +198,13 @@ export default function Filters({
         label="All locations"
         options={locations.map((location) => ({ value: location, label: location }))}
         selected={current.locations}
-        onChange={setLocations}
+        onChange={(next) => setParam("location", next.join(","))}
       />
 
       {/* Tags dropdown — single selection */}
       <select
         value={current.tags[0]?.toLowerCase() ?? ""}
-        onChange={(e) => setTagFromDropdown(e.target.value)}
+        onChange={(e) => setParam("tags", e.target.value)}
         className="h-8 max-w-32.5 px-2 text-sm bg-surface border border-edge rounded-md text-ink-secondary focus:outline-none focus:border-edge-strong cursor-pointer"
       >
         <option value="">All tags</option>

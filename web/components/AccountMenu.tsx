@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { useTheme } from "./ThemeProvider";
-
-const THEME_ORDER = ["light", "dark", "system"] as const;
-const THEME_ICON = { light: "☀", dark: "☾", system: "◐" } as const;
+import { THEME_ICON, nextTheme, useTheme } from "./ThemeProvider";
+import { useCloseOnOutside } from "@/lib/useCloseOnOutside";
 
 export default function AccountMenu() {
   const { data: session, status } = useSession();
@@ -14,14 +12,7 @@ export default function AccountMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: PointerEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
+  useCloseOnOutside(ref, open, setOpen);
 
   if (status === "loading") return null;
 
@@ -36,8 +27,6 @@ export default function AccountMenu() {
       </Link>
     );
   }
-
-  const nextTheme = THEME_ORDER[(THEME_ORDER.indexOf(theme) + 1) % THEME_ORDER.length];
 
   return (
     <div ref={ref} className="relative inline-flex">
@@ -73,7 +62,7 @@ export default function AccountMenu() {
             <MenuLink href="/profile?tab=integrations" onNavigate={() => setOpen(false)}>Integrations</MenuLink>
             <button
               type="button"
-              onClick={() => setTheme(nextTheme)}
+              onClick={() => setTheme(nextTheme(theme))}
               className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm
                          text-ink-secondary hover:text-ink hover:bg-surface transition-colors cursor-pointer"
             >

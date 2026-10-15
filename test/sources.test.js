@@ -24,8 +24,6 @@ test('newly registered companies without scrape history are due immediately', ()
       company: 'Acme',
       slug: 'acme',
       source: 'workable',
-      enabled: true,
-      frequencyHours: 12,
     },
   ];
 
@@ -37,8 +35,6 @@ test('source-specific Workday slugs retain their tenant, host, and site segments
     company: 'Acme',
     slug: 'acme/wd5/careers',
     source: 'workday',
-    enabled: true,
-    frequencyHours: 12,
   };
 
   assert.deepEqual(getDueCompanies({}, [workdayCompany]), [workdayCompany]);
@@ -50,15 +46,11 @@ test('scrape history is keyed by source and slug', () => {
       company: 'Acme Workable',
       slug: 'acme',
       source: 'workable',
-      enabled: true,
-      frequencyHours: 12,
     },
     {
       company: 'Acme Lever',
       slug: 'acme',
       source: 'lever',
-      enabled: true,
-      frequencyHours: 12,
     },
   ];
 

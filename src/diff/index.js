@@ -41,23 +41,9 @@ async function detectChanges(normalizedJobs, company) {
 
   const removedJobs = await store.markRemovedJobs(company, currentActiveJobIds);
 
-  for (const removed of removedJobs) {
-    changes.push({
-      type: EVENT_TYPES.JOB_REMOVED,
-      job: {
-        jobId: removed.job_id,
-        company: removed.company,
-        title: removed.title,
-        location: removed.location,
-        team: removed.team,
-        department: removed.department,
-        employmentType: removed.employment_type,
-        remote: Boolean(removed.remote),
-        applyUrl: removed.apply_url,
-        jobUrl: removed.job_url,
-      },
-    });
-    logger.debug(`REMOVED: ${removed.title} at ${company}`);
+  for (const job of removedJobs) {
+    changes.push({ type: EVENT_TYPES.JOB_REMOVED, job });
+    logger.debug(`REMOVED: ${job.title} at ${company}`);
   }
 
   logger.info(

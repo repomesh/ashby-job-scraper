@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const config = require('../config');
-const { logger, jitteredDelay } = require('../utils');
+const { logger, delay } = require('../utils');
 const { runPipeline } = require('./pipeline');
 const store = require('../store');
 const linkedin = require('../linkedin');
@@ -13,7 +13,7 @@ function startScheduler() {
     const jitterMs = Math.random() * config.schedule.jitterMaxMinutes * 60 * 1000;
     logger.info(`Scheduled run triggered. Jitter delay: ${Math.round(jitterMs / 1000)}s`);
 
-    await jitteredDelay(0, jitterMs);
+    await delay(jitterMs);
     await runPipeline();
   });
 
