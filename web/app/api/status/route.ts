@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { query } from "@/lib/db";
+import { readJson } from "@/lib/read-json";
 
 export async function GET() {
   const session = await auth();
@@ -19,9 +20,10 @@ export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const body = await request.json();
-  const jobId = String(body?.jobId || "");
-  const status = body?.status;
+  const [body, error] = await readJson<{ jobId?: unknown; status?: unknown }>(request);
+  if (error) return error;
+  const jobId = String(body.jobId || "");
+  const status = body.status;
   if (!jobId) return NextResponse.json({ error: "jobId is required" }, { status: 400 });
   if (status !== "applied" && status !== "ignored" && status !== "new") {
     return NextResponse.json({ error: "status must be 'applied', 'ignored', or 'new'" }, { status: 400 });

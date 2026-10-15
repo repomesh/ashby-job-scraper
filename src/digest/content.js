@@ -4,7 +4,7 @@
 const { classifyNiche, NICHE_LABELS } = require('./niche');
 const { littleText } = require('../linkedin');
 
-const SITE_URL = (process.env.SITE_URL || 'https://ashbyhq-scraper.vercel.app').replace(/\/+$/, '');
+const SITE_URL = (process.env.SITE_URL || 'https://jobs.whatrunsindia.com').replace(/\/+$/, '');
 // First commit and Vercel project: day 1 of the build-in-public counter.
 const LAUNCH_DATE = Date.UTC(2026, 1, 28);
 const DAY_MS = 24 * 60 * 60 * 1000;

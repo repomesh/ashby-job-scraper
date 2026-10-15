@@ -10,6 +10,7 @@ import { computeStoredScore } from "../../../../src/intelligence/rules-engine";
 import { departmentGroup } from "../../../../src/normalize/departments";
 import rules from "../../../../src/config/rules.json";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { readJson } from "@/lib/read-json";
 
 type Source = keyof typeof ADAPTERS;
 const SOURCES = Object.keys(ADAPTERS) as Source[];
@@ -318,7 +319,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
     }
 
-    const body = await request.json();
+    const [body, error] = await readJson<{ url?: string; slug?: string; source?: string }>(request);
+    if (error) return error;
     const rawInput: string = body.url || body.slug || "";
 
     const parsed = extractSlugAndSource(rawInput, body.source);
@@ -488,8 +490,8 @@ export async function POST(request: NextRequest) {
       jobs: { total, inserted, updated, unchanged, removed },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
   }
 }
 
@@ -514,7 +516,7 @@ export async function GET() {
     }
     return NextResponse.json({ companies: Array.from(byKey.values()) });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Something went wrong. Try again." }, { status: 500 });
   }
 }

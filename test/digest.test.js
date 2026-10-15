@@ -167,7 +167,7 @@ test('buildDigest: Groq copy around the exact numbers, tags from the day\'s nich
   assert.ok(posts[0].startsWith('1,234 new jobs since yesterday, from 1,061 companies.\n\nDay 220 of building'));
   assert.match(posts[0], /\n→ 1,234 new jobs\n/);
   assert.match(posts[0], /Shipped:\n→ A daily email with the best new roles\n/);
-  assert.match(posts[0], /the day it opens\.\nFree, no sign-up: https:\/\/ashbyhq-scraper\.vercel\.app\n\n#BuildInPublic/);
+  assert.match(posts[0], /the day it opens\.\nFree, no sign-up: https:\/\/jobs\.whatrunsindia\.com\n\n#BuildInPublic/);
   assert.deepEqual(posts.slice(1).map((p) => p.split('\n')[0]), goodCopy().jobHooks);
   assert.ok(posts[1].endsWith('\n#Hiring #NowHiring #JobOpenings #JobAlert #TechJobs #SoftwareJobs #SoftwareEngineering #SoftwareDeveloper'
     + ' #OpenToWork #JobSearch #Frontend #WebDevelopment #Backend #APIs #AI #MachineLearning'));
@@ -177,7 +177,7 @@ test('buildDigest: Groq copy around the exact numbers, tags from the day\'s nich
 test('job posts: score after the number, link right under each job, no first comment', () => {
   const { text, posts } = buildDigest(baseData());
   assert.equal(posts.length, 3);
-  assert.ok(posts[1].includes('\n\n1. [40] 🎨 Frontend Engineer at Co0 (Berlin)\nLink: https://ashbyhq-scraper.vercel.app/jobs/j0\n\n2. [39] ⚙️ Backend Engineer at Co1'));
+  assert.ok(posts[1].includes('\n\n1. [40] 🎨 Frontend Engineer at Co0 (Berlin)\nLink: https://jobs.whatrunsindia.com/jobs/j0\n\n2. [39] ⚙️ Backend Engineer at Co1'));
   assert.equal(posts[1].match(/^Link: /gm).length, 10);
   assert.ok(!/first comment/i.test(text));
 });
@@ -185,8 +185,13 @@ test('job posts: score after the number, link right under each job, no first com
 test('job posts: long titles are cut and the list shrinks to fit LinkedIn\'s 3,000 characters', () => {
   const long = Array.from({ length: 10 }, (_, i) => job(i, `Frontend Engineer ${'x'.repeat(200)}`, 40 - i, `Company${i}${'y'.repeat(150)}`));
   const { posts } = buildDigest(baseData({ candidates: long }));
-  // Escaped as it's sent, with room for the longest hook Groq may write.
-  for (const post of posts.slice(1)) assert.ok(littleText(post).length <= 3000 - 320, String(littleText(post).length));
+  // Escaped as it's sent, and still under 3,000 if the hook were the longest Groq may write
+  // (the code reserves 320 for it). The real hook is shorter, so the post itself may be longer
+  // than 3000 - 320: it depends on how many jobs fit, which depends on the link length.
+  for (const post of posts.slice(1)) {
+    const jobs = post.slice(post.indexOf('\n\n') + 2);
+    assert.ok(littleText(`${'x'.repeat(320)}\n\n${jobs}`).length <= 3000, String(littleText(post).length));
+  }
   assert.ok(posts[1].match(/^Link: /gm).length < 10);
   assert.match(posts[1], /^1\. \[40\] 🎨 Frontend Engineer x+… at Company0/m);
   const crowded = Array.from({ length: 10 }, (_, i) => job(i, `Frontend (${'['.repeat(60)}) Engineer`, 40 - i, `Co*${'_'.repeat(150)}`));

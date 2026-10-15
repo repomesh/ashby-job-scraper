@@ -127,7 +127,9 @@ function withStaleFallback<T>(fn: () => Promise<T>, emptyFallback: T): () => Pro
     try {
       last = await fn();
       return last;
-    } catch {
+    } catch (err) {
+      // The deploy build sets this: failing it beats prerendering an empty site.
+      if (process.env.REQUIRE_DB) throw err;
       return last;
     }
   };
@@ -335,7 +337,9 @@ export async function getJobs(
   const limit = Math.min(filters.limit || 40, 100);
   try {
     return await getCachedJobsPage(filters, page, limit);
-  } catch {
+  } catch (err) {
+    // The deploy build sets this: failing it beats prerendering an empty feed.
+    if (process.env.REQUIRE_DB) throw err;
     // DB unreachable — degrade to empty like the other lookups here. No
     // full-table in-memory fallback: loading + scoring every job cost seconds
     // of CPU per hit, and unstable_cache already serves stale entries.
@@ -361,13 +365,16 @@ export async function getJobById(jobId: string): Promise<JobWithScore | null> {
 // dedupeRowsByJobId) — show one, preferring a still-active copy.
 export async function getJobsByIds(jobIds: string[]): Promise<JobWithScore[]> {
   if (jobIds.length === 0) return [];
-  const { rows } = await query<JobRow>(
-    `SELECT DISTINCT ON (job_id) ${LIST_COLUMNS_BULK} FROM jobs
+  // The stored score and tags, like the feed: re-scoring here ran on the blanked description
+  // and gave lower scores and fewer tags than the same job shows in the feed.
+  const { rows } = await query<ScoredJobRow>(
+    `SELECT DISTINCT ON (job_id) ${LIST_COLUMNS_BULK}, base_score, matched_keywords, ${SCORE_EXPR} AS computed_score
+     FROM jobs
      WHERE job_id = ANY($1::text[])
      ORDER BY job_id, is_active DESC, updated_at DESC`,
     [jobIds]
   );
-  return rows.map((r) => scoreJob(rowToJob(r))).map(stripForList);
+  return rows.map((r) => stripForList(rowToJobWithScore(r)));
 }
 
 export const getCompanies = withStaleFallback(unstable_cache(

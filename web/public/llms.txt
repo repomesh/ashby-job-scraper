@@ -10,9 +10,9 @@ Each of these platforms is an applicant tracking system used by companies to man
 
 ## Pages
 
-- [Home](https://ashbyhq-scraper.vercel.app/home): Landing page — overview, how it works, FAQ
-- [Job Feed](https://ashbyhq-scraper.vercel.app/): Browse all active job listings from every supported ATS, with filters
-- [Sitemap](https://ashbyhq-scraper.vercel.app/sitemap.xml): All indexed job pages
+- [Home](https://jobs.whatrunsindia.com/home): Landing page — overview, how it works, FAQ
+- [Job Feed](https://jobs.whatrunsindia.com/): Browse all active job listings from every supported ATS, with filters
+- [Sitemap](https://jobs.whatrunsindia.com/sitemap.xml): All indexed job pages
 
 ## Companies tracked (sample)
 

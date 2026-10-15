@@ -1,6 +1,10 @@
 import { query } from "./db";
 
 export function getClientIp(request: Request): string {
+  // Cloudflare overwrites this with the real peer address. Vercel passes it through
+  // untouched, so a client could forge it there: only trusted off Vercel.
+  const cloudflare = process.env.VERCEL ? null : request.headers.get("cf-connecting-ip");
+  if (cloudflare) return cloudflare.trim();
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) return forwarded.split(",")[0].trim();
   return request.headers.get("x-real-ip") ?? "unknown";
