@@ -1,41 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 const { logger } = require('../utils');
+const { ADAPTERS } = require('../normalize');
 
 const REGISTRY_PATH = path.resolve(__dirname, 'registry.json');
-const SUPPORTED_SOURCES = [
-  'ashby',
-  'lever',
-  'greenhouse',
-  'workable',
-  'recruitee',
-  'teamtailor',
-  'pinpoint',
-  'smartrecruiters',
-  'workday',
-  'keka',
-];
-const VALID_SOURCES = new Set(SUPPORTED_SOURCES);
+const SUPPORTED_SOURCES = Object.keys(ADAPTERS);
+// `start` runs the pipeline on every container restart; this gate is what
+// stops those runs re-scraping companies the nightly run just did.
+const FREQUENCY_HOURS = 12;
 
 function loadRegistry() {
   const raw = fs.readFileSync(REGISTRY_PATH, 'utf-8');
   return JSON.parse(raw);
 }
 
-function getEnabledCompanies() {
-  const all = loadRegistry();
-  const enabled = all.filter(c => c.enabled);
-  logger.debug(`Loaded ${enabled.length}/${all.length} enabled companies`);
-  return enabled;
-}
-
 async function getEnabledCompaniesWithDb(pool) {
-  const allRegistry = loadRegistry();
-  const enabled = allRegistry.filter(c => c.enabled);
+  const enabled = loadRegistry();
 
   const key = c => `${c.source || 'ashby'}:${c.slug.toLowerCase()}`;
   const enabledKeys = new Set(enabled.map(key));
-  const disabledKeys = new Set(allRegistry.filter(c => !c.enabled).map(key));
 
   try {
     const { rows } = await pool.query(
@@ -46,13 +29,11 @@ async function getEnabledCompaniesWithDb(pool) {
     for (const row of rows) {
       const source = row.source || 'ashby';
       const rowKey = `${source}:${row.slug.toLowerCase()}`;
-      if (!enabledKeys.has(rowKey) && !disabledKeys.has(rowKey)) {
+      if (!enabledKeys.has(rowKey)) {
         enabled.push({
           company: row.name,
           slug: row.slug,
           source,
-          enabled: true,
-          frequencyHours: 12,
         });
         enabledKeys.add(rowKey);
         dbOnlyCount++;
@@ -96,7 +77,7 @@ function addCompany(slug, name, source = 'ashby') {
     logger.warn(`Invalid slug rejected: "${slug}" (${format}; max ${SLUG_MAX_LEN} chars)`);
     return false;
   }
-  if (!VALID_SOURCES.has(normalizedSource)) {
+  if (!SUPPORTED_SOURCES.includes(normalizedSource)) {
     logger.warn(`Invalid source rejected: "${source}" (expected one of ${SUPPORTED_SOURCES.join(', ')})`);
     return false;
   }
@@ -113,8 +94,6 @@ function addCompany(slug, name, source = 'ashby') {
     company: name || slug,
     slug: normalizedSlug,
     source: normalizedSource,
-    enabled: true,
-    frequencyHours: 12,
   });
 
   fs.writeFileSync(REGISTRY_PATH, JSON.stringify(registry, null, 2) + '\n', 'utf-8');
@@ -123,21 +102,19 @@ function addCompany(slug, name, source = 'ashby') {
 }
 
 function getDueCompanies(companiesLastScraped, allCompanies) {
-  const enabled = allCompanies || getEnabledCompanies();
   const now = Date.now();
 
-  return enabled.filter(company => {
+  return allCompanies.filter(company => {
     const key = `${company.source || 'ashby'}:${company.slug.toLowerCase()}`;
     const lastScraped = companiesLastScraped[key];
     if (!lastScraped) return true;
     const elapsed = (now - new Date(lastScraped).getTime()) / (1000 * 60 * 60);
-    return elapsed >= company.frequencyHours;
+    return elapsed >= FREQUENCY_HOURS;
   });
 }
 
 module.exports = {
   loadRegistry,
-  getEnabledCompanies,
   getEnabledCompaniesWithDb,
   addCompany,
   getDueCompanies,

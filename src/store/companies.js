@@ -24,22 +24,10 @@ async function updateLastScraped(slug, source = 'ashby') {
 async function getAllCompaniesLastScraped() {
   const pool = getPool();
   const { rows } = await pool.query(
-    'SELECT slug, source, last_scraped_at FROM companies ORDER BY last_scraped_at DESC NULLS LAST'
+    `SELECT source || ':' || LOWER(slug) AS key, MAX(last_scraped_at) AS last_scraped_at
+     FROM companies GROUP BY 1`
   );
-  const map = {};
-  for (const row of rows) {
-    const key = `${row.source}:${row.slug.toLowerCase()}`;
-    const next = row.last_scraped_at ? row.last_scraped_at.toISOString() : null;
-    const prev = map[key];
-    if (
-      !(key in map) ||
-      (next !== null &&
-        (prev == null || new Date(next).getTime() > new Date(prev).getTime()))
-    ) {
-      map[key] = next;
-    }
-  }
-  return map;
+  return Object.fromEntries(rows.map(r => [r.key, r.last_scraped_at ? r.last_scraped_at.toISOString() : null]));
 }
 
 module.exports = { upsertCompany, updateLastScraped, getAllCompaniesLastScraped };

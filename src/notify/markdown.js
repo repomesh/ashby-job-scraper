@@ -85,19 +85,10 @@ function generateReport(allChanges, scoredJobs) {
 
 function writeReport(dateStr, content) {
   const dir = path.resolve(config.notify.reportsDir);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  fs.mkdirSync(dir, { recursive: true });
 
-  const filePath = path.join(dir, `${dateStr}.md`);
-
-  if (fs.existsSync(filePath)) {
-    const timestamp = Date.now();
-    const altPath = path.join(dir, `${dateStr}-${timestamp}.md`);
-    fs.writeFileSync(altPath, content, 'utf-8');
-    logger.info(`Report written to ${altPath}`);
-    return altPath;
-  }
+  let filePath = path.join(dir, `${dateStr}.md`);
+  if (fs.existsSync(filePath)) filePath = path.join(dir, `${dateStr}-${Date.now()}.md`);
 
   fs.writeFileSync(filePath, content, 'utf-8');
   logger.info(`Report written to ${filePath}`);
@@ -106,24 +97,7 @@ function writeReport(dateStr, content) {
 
 async function generateReportFromDb(store, intelligence) {
   const activeJobs = await store.getAllActiveJobs();
-
-  const normalized = activeJobs.map(row => ({
-    jobId: row.job_id,
-    company: row.company,
-    title: row.title,
-    location: row.location,
-    team: row.team,
-    department: row.department,
-    employmentType: row.employment_type,
-    remote: Boolean(row.remote),
-    description: row.description,
-    applyUrl: row.apply_url,
-    jobUrl: row.job_url,
-    publishedAt: row.published_at,
-    compensationSummary: row.compensation_summary,
-  }));
-
-  const { filtered } = intelligence.filterAndRank(normalized);
+  const { filtered } = intelligence.filterAndRank(activeJobs);
 
   const reportPath = generateReport([], filtered);
   return reportPath;

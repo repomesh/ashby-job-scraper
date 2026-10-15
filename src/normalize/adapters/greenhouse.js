@@ -37,9 +37,5 @@ function normalizeJob(raw, company) {
   };
 }
 
-// Greenhouse's board endpoint only lists open, published jobs already.
-function filterRaw(rawJobs) {
-  return rawJobs;
-}
-
-module.exports = { normalizeJob, filterRaw };
+// No filterRaw: Greenhouse's board endpoint only lists open, published jobs already.
+module.exports = { normalizeJob };

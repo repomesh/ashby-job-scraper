@@ -191,27 +191,6 @@ async function migrateSchema(p) {
 
   // --- one-time migrations for existing deployments ---
 
-  // drop description_html if it still exists (frees up ~50-80% storage per row)
-  await p.query(`
-    ALTER TABLE jobs DROP COLUMN IF EXISTS description_html
-  `);
-
-  // rename companies.ashby_slug -> slug + add source column (multi-ATS support)
-  await p.query(`
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'companies' AND column_name = 'ashby_slug'
-      ) THEN
-        ALTER TABLE companies RENAME COLUMN ashby_slug TO slug;
-      END IF;
-    END$$
-  `);
-
-  await p.query(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'ashby'`);
-  await p.query(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'ashby'`);
-
   // structured salary data (min/max/currency), where the source exposes it —
   // compensation_summary stays as the free-text display string
   await p.query(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS compensation_min NUMERIC`);
@@ -219,9 +198,7 @@ async function migrateSchema(p) {
   await p.query(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS compensation_currency TEXT`);
   await p.query(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS compensation_interval TEXT`);
 
-  // old schema had a single-column UNIQUE(ashby_slug) — replace with UNIQUE(slug, source)
-  // now that the same slug string could exist under different ATSes.
-  await p.query(`ALTER TABLE companies DROP CONSTRAINT IF EXISTS companies_ashby_slug_key`);
+  // UNIQUE(slug, source): the same slug string can exist under different ATSes.
   await p.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_slug_source
       ON companies (slug, source)
@@ -316,25 +293,6 @@ async function migrateSchema(p) {
     LANGUAGE sql STABLE
     SET enable_seqscan = off
     AS $$ SELECT id FROM jobs WHERE search_tsv @@ q $$
-  `);
-  // Only served the old title/company ILIKE search, replaced by idx_jobs_search.
-  await p.query(`DROP INDEX IF EXISTS idx_jobs_title_trgm`);
-  await p.query(`DROP INDEX IF EXISTS idx_jobs_company_trgm`);
-
-  // migrate snapshot_data column from TEXT to JSONB if needed
-  await p.query(`
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'job_snapshots'
-          AND column_name = 'snapshot_data'
-          AND data_type = 'text'
-      ) THEN
-        ALTER TABLE job_snapshots
-          ALTER COLUMN snapshot_data TYPE JSONB USING snapshot_data::jsonb;
-      END IF;
-    END$$
   `);
 }
 

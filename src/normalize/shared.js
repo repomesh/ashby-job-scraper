@@ -90,42 +90,10 @@ const COUNTRY_ALIASES = new Map([
   ['za', 'South Africa'],
 ]);
 
-const COUNTRY_CODES = new Map([
-  ['United States', 'US'],
-  ['United Kingdom', 'GB'],
-  ['United Arab Emirates', 'AE'],
-  ['Canada', 'CA'],
-  ['Australia', 'AU'],
-  ['Austria', 'AT'],
-  ['Belgium', 'BE'],
-  ['Brazil', 'BR'],
-  ['Switzerland', 'CH'],
-  ['China', 'CN'],
-  ['Czechia', 'CZ'],
-  ['Germany', 'DE'],
-  ['Denmark', 'DK'],
-  ['Spain', 'ES'],
-  ['Finland', 'FI'],
-  ['France', 'FR'],
-  ['Greece', 'GR'],
-  ['Ireland', 'IE'],
-  ['Israel', 'IL'],
-  ['India', 'IN'],
-  ['Italy', 'IT'],
-  ['Japan', 'JP'],
-  ['South Korea', 'KR'],
-  ['Mexico', 'MX'],
-  ['Netherlands', 'NL'],
-  ['Norway', 'NO'],
-  ['New Zealand', 'NZ'],
-  ['Poland', 'PL'],
-  ['Portugal', 'PT'],
-  ['Romania', 'RO'],
-  ['Sweden', 'SE'],
-  ['Singapore', 'SG'],
-  ['Türkiye', 'TR'],
-  ['South Africa', 'ZA'],
-]);
+// Country name -> ISO code: the two-letter aliases are the codes, except 'uk' (the code is GB).
+const COUNTRY_CODES = new Map([...COUNTRY_ALIASES]
+  .filter(([alias]) => alias.length === 2 && alias !== 'uk')
+  .map(([alias, name]) => [name, alias.toUpperCase()]));
 
 function locationKey(value) {
   return String(value || '')

@@ -1,12 +1,9 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import type { ProfileData } from "@/lib/profile";
-
-type Tab = "profile" | "jobs" | "integrations";
 
 interface JobSummary {
   jobId: string;
@@ -15,28 +12,8 @@ interface JobSummary {
   isActive: boolean;
 }
 
-export default function ProfileClient({ initialData }: { initialData: ProfileData }) {
-  return (
-    <Suspense fallback={null}>
-      <ProfileClientInner initialData={initialData} />
-    </Suspense>
-  );
-}
-
-function ProfileClientInner({ initialData }: { initialData: ProfileData }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tab = (searchParams.get("tab") as Tab) || "profile";
+export default function ProfileClient({ initialData, tab }: { initialData: ProfileData; tab: string }) {
   const [data, setData] = useState<ProfileData>(initialData);
-
-  const setTab = useCallback(
-    (next: Tab) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("tab", next);
-      router.push(`/profile?${params.toString()}`);
-    },
-    [router, searchParams]
-  );
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -44,15 +21,15 @@ function ProfileClientInner({ initialData }: { initialData: ProfileData }) {
 
       <div className="flex gap-1 mb-6 border-b border-edge">
         {(["profile", "jobs", "integrations"] as const).map((t) => (
-          <button
+          <Link
             key={t}
-            type="button"
-            onClick={() => setTab(t)}
+            href={`/profile?tab=${t}`}
+            prefetch={false}
             className={`px-3 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors cursor-pointer
               ${tab === t ? "border-ink text-ink" : "border-transparent text-ink-secondary hover:text-ink"}`}
           >
             {t}
-          </button>
+          </Link>
         ))}
       </div>
 

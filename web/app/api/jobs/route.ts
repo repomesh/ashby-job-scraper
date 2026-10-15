@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-	getJobs,
-	getCompanies,
-	getStats,
-	getDepartments,
-	getLocations,
-} from '@/lib/query';
+import { getJobs, getCompanies, getLocations } from '@/lib/query';
 import { POSITIVE_TAG_OPTIONS } from '@/lib/scoring';
+import { DEPARTMENT_GROUPS } from '../../../../src/normalize/departments';
 import { PROVIDERS } from '@/lib/providers';
 import type { JobFilters } from '@/lib/types';
 import { parseLocationValues } from '@/lib/location-filter';
@@ -35,56 +30,6 @@ function safeInt(value: string | null, def: number, max: number): number {
 export async function GET(request: NextRequest) {
 	try {
 		const sp = request.nextUrl.searchParams;
-
-		if (sp.get('meta') === 'companies') {
-			const companies = await getCompanies();
-			return NextResponse.json(
-				{ companies },
-				{
-					headers: {
-						'Cache-Control':
-							'public, s-maxage=300, stale-while-revalidate=600',
-					},
-				}
-			);
-		}
-
-		if (sp.get('meta') === 'departments') {
-			const departments = await getDepartments();
-			return NextResponse.json(
-				{ departments },
-				{
-					headers: {
-						'Cache-Control':
-							'public, s-maxage=300, stale-while-revalidate=600',
-					},
-				}
-			);
-		}
-
-		if (sp.get('meta') === 'locations') {
-			const locations = await getLocations();
-			return NextResponse.json(
-				{ locations },
-				{
-					headers: {
-						'Cache-Control':
-							'public, s-maxage=300, stale-while-revalidate=600',
-					},
-				}
-			);
-		}
-
-		if (sp.get('meta') === 'stats') {
-			const stats = await getStats();
-			return NextResponse.json(stats, {
-				headers: {
-					'Cache-Control':
-						'public, s-maxage=300, stale-while-revalidate=600',
-				},
-			});
-		}
-
 		const filters: JobFilters = {};
 
 		const searchRaw = sp.get('search');
@@ -136,9 +81,8 @@ export async function GET(request: NextRequest) {
 		// links to a raw department) are dropped instead of failing the request.
 		const departmentRaw = sp.get('department');
 		if (departmentRaw) {
-			const groups = await getDepartments();
 			const departments = parseLocationValues(departmentRaw)
-				.map((d) => groups.find((g) => g.toLowerCase() === d.toLowerCase()))
+				.map((d) => DEPARTMENT_GROUPS.find((g) => g.toLowerCase() === d.toLowerCase()))
 				.filter((g): g is string => Boolean(g));
 			if (departments.length > 0) filters.departments = departments;
 		}

@@ -27,23 +27,26 @@ function getTransport() {
   });
 }
 
+// Throws on failure; callers that must not fail catch it themselves.
+async function send(to: string, message: { subject: string; text: string; html: string }): Promise<void> {
+  const from = process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER;
+  await getTransport().sendMail({ from: `Ashby Jobs <${from}>`, to, ...message });
+}
+
 export async function sendOtpEmail(to: string, code: string): Promise<void> {
   if (!process.env.EMAIL_SERVER_HOST && process.env.NODE_ENV !== "production") {
     // No SMTP configured locally — print the code instead of failing, so sign-in is testable without a real inbox.
     console.log(`[dev] OTP code for ${to}: ${code}`);
     return;
   }
-  const from = process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER;
-  await getTransport().sendMail({
-    from: `Ashby Jobs <${from}>`,
-    to,
+  await send(to, {
     subject: `${code} is your Ashby Jobs sign-in code`,
     text: `Your sign-in code is ${code}. It expires in 10 minutes. If you didn't request this, you can ignore this email.`,
     html: `<p>Your sign-in code is <strong style="font-size:20px;letter-spacing:2px">${code}</strong>.</p><p>It expires in 10 minutes. If you didn't request this, you can ignore this email.</p>`,
   });
 }
 
-// Pure content builders — kept separate from the network call so they're
+// Pure content builder — kept separate from the network call so it's
 // testable without a real SMTP connection.
 export function buildWelcomeEmail(name: string | null): { subject: string; text: string; html: string } {
   const greeting = name ? `Hi ${name}` : "Hi there";
@@ -66,18 +69,9 @@ export function buildWelcomeEmail(name: string | null): { subject: string; text:
   return { subject, text, html };
 }
 
-export function buildAdminSignupNotification(email: string): { subject: string; text: string; html: string } {
-  const subject = `New signup: ${email}`;
-  const text = `${email} just signed up for Ashby Jobs.`;
-  const html = `<p>${email} just signed up for Ashby Jobs.</p>`;
-  return { subject, text, html };
-}
-
 export async function sendWelcomeEmail(to: string, name: string | null): Promise<void> {
   try {
-    const from = process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER;
-    const { subject, text, html } = buildWelcomeEmail(name);
-    await getTransport().sendMail({ from: `Ashby Jobs <${from}>`, to, subject, text, html });
+    await send(to, buildWelcomeEmail(name));
   } catch (err) {
     // Never let a mail-delivery failure (or missing SMTP config, e.g. in
     // local dev) break sign-up — this is a best-effort notification.
@@ -87,10 +81,12 @@ export async function sendWelcomeEmail(to: string, name: string | null): Promise
 
 export async function notifyAdminOfNewSignup(email: string): Promise<void> {
   try {
-    const from = process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER;
     const admin = process.env.SIGNUP_NOTIFY_EMAIL || "rishilahoti99@gmail.com";
-    const { subject, text, html } = buildAdminSignupNotification(email);
-    await getTransport().sendMail({ from: `Ashby Jobs <${from}>`, to: admin, subject, text, html });
+    await send(admin, {
+      subject: `New signup: ${email}`,
+      text: `${email} just signed up for Ashby Jobs.`,
+      html: `<p>${email} just signed up for Ashby Jobs.</p>`,
+    });
   } catch (err) {
     console.error("notifyAdminOfNewSignup failed", err);
   }

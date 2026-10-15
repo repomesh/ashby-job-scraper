@@ -47,7 +47,6 @@ Frontend and database are hosted separately:
 
 - **Frontend** — https://jobs.whatrunsindia.com. A Next.js standalone container on an Oracle ARM server, reached through a Cloudflare Tunnel (no open ports); Cloudflare provides DNS, edge caching and the firewall. `.github/workflows/deploy-web.yml` builds the arm64 image (`web/Dockerfile`) on every push to `main`, scans it, pushes it to GHCR, and ssh-es to the server with a key that can only run `deploy/web/deploy.sh` (pull, restart, roll back if the new image isn't healthy). Server layout, the compose file and the settings it expects are in `deploy/web/`. The old Vercel address only redirects (308) to the new one.
 - **Database + scraper** — `docker-compose.yml` at repo root runs `db` (Postgres 17, SSL enabled via a self-signed cert in `./certs/`, published on `5432`), `scraper` (runs `node index.js start`, which scrapes immediately on boot then follows `CRON_SCHEDULE`, default daily), and `watchtower` (polls GHCR every 5 min, auto-pulls + recreates `scraper` on new pushes to `main` — no manual SSH/pull needed). The scraper image is built and pushed to GHCR by `.github/workflows/build-images.yml` on every push to `main`.
-- **Migrating from Neon (or any other Postgres)** — `scripts/migrate-from-neon.sh` runs `pg_dump | psql` from a source URL into the local `db` container. Run it from the deployment host after `docker compose up -d db`.
 - **One-time data backfills** (e.g. the location canonicalization migration) don't run automatically on startup — they can scan the whole `jobs` table, which shouldn't happen silently on every scraper restart. Run them once per database with `docker compose exec scraper node index.js migrate`.
 
 SSL note: the self-signed cert encrypts the connection but isn't CA-verified — both `src/store/db.js` and `web/lib/db.ts` connect with `rejectUnauthorized: false`, and only enable SSL at all when the connection string includes `sslmode=require`.
@@ -148,8 +147,6 @@ Intelligence rules (keyword weights, preferred locations, etc.) are in `src/conf
 ├── index.js                CLI entry point (run, start, report, add, discover)
 ├── Dockerfile               Scraper image (built by build-images.yml → GHCR)
 ├── docker-compose.yml       db (Postgres 17 + SSL) + scraper containers
-├── scripts/
-│   └── migrate-from-neon.sh  One-off pg_dump/psql migration into the db container
 ├── .github/workflows/
 │   ├── build-images.yml    Builds + pushes the scraper image to GHCR (on push to main)
 │   └── discover.yml        Scheduled Ashby/Greenhouse discovery (daily)
@@ -168,7 +165,7 @@ Intelligence rules (keyword weights, preferred locations, etc.) are in `src/conf
 │   └── utils/              Logger, hash, delay helpers
 ├── web/
 │   ├── app/                Next.js pages (feed, detail, applied, ignored, add)
-│   │   └── api/companies/  POST to add + scrape (any source), GET to list companies
+│   │   └── api/companies/  POST to add + scrape (any source)
 │   ├── components/         UI components (filters, job list, add company form, source tag)
 │   └── lib/                Database queries (multi-DB failover), scoring, types, localStorage status
 ├── reports/                Generated Markdown reports

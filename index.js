@@ -1,8 +1,7 @@
 const { program } = require('commander');
+// Before anything that loads the logger: it reads LOG_LEVEL from the .env this loads.
 const config = require('./src/config');
 const { logger } = require('./src/utils');
-
-logger.setLevel(config.logging.level);
 
 program
   .name('ashby-scraper')

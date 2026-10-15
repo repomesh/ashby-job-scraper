@@ -68,9 +68,5 @@ function normalizeJob(raw, company) {
   };
 }
 
-// postings.json only ever lists live postings — nothing to filter out.
-function filterRaw(rawJobs) {
-  return rawJobs;
-}
-
-module.exports = { normalizeJob, filterRaw };
+// No filterRaw: postings.json only ever lists live postings.
+module.exports = { normalizeJob };

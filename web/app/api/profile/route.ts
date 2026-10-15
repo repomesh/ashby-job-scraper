@@ -27,13 +27,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   }
 
-  const sets: string[] = [];
-  const params: (string | number)[] = [];
-  let idx = 1;
-  if (name !== undefined) { sets.push(`name = $${idx++}`); params.push(name); }
-  if (role !== undefined) { sets.push(`role = $${idx++}`); params.push(role); }
-  params.push(session.user.id);
-
-  await query(`UPDATE users SET ${sets.join(", ")} WHERE id = $${idx}`, params);
+  await query(
+    `UPDATE users SET name = COALESCE($1, name), role = COALESCE($2, role) WHERE id = $3`,
+    [name ?? null, role ?? null, session.user.id]
+  );
   return NextResponse.json({ success: true });
 }

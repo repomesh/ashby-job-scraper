@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { getJobs, getCompanies, getStats, getDepartments, getLocations } from "@/lib/query";
+import { getJobs, getCompanies, getStats, getLocations } from "@/lib/query";
 import { POSITIVE_TAG_OPTIONS } from "@/lib/scoring";
+import { DEPARTMENT_GROUPS } from "../../../src/normalize/departments";
 import { PROVIDER_NAMES } from "@/lib/providers";
 import JobList from "@/components/JobList";
 import Filters from "@/components/Filters";
@@ -41,11 +42,10 @@ export async function generateMetadata(): Promise<Metadata> {
 // No searchParams here on purpose: reading them makes the page render on the
 // server for every request. The page is static; FeedResults handles filters.
 export default async function FeedPage() {
-  const [result, companies, stats, departments, locations] = await Promise.all([
+  const [result, companies, stats, locations] = await Promise.all([
     getJobs(),
     getCompanies(),
     getStats(),
-    getDepartments(),
     getLocations(),
   ]);
 
@@ -79,7 +79,7 @@ export default async function FeedPage() {
       <Suspense fallback={null}>
         <Filters
           companies={companies}
-          departments={departments}
+          departments={DEPARTMENT_GROUPS}
           locations={locations}
           tagOptions={POSITIVE_TAG_OPTIONS}
         />

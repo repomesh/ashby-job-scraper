@@ -1,15 +1,7 @@
--- Auth.js (@auth/pg-adapter) tables — exact schema the adapter expects:
--- https://authjs.dev/getting-started/adapters/pg
+-- Auth.js (@auth/pg-adapter) tables, from
+-- https://authjs.dev/getting-started/adapters/pg minus sessions and
+-- verification_token: JWT sessions and no Email provider never touch them.
 -- Run once against the app DB; safe to re-run (IF NOT EXISTS everywhere).
-
-CREATE TABLE IF NOT EXISTS verification_token
-(
-  identifier TEXT NOT NULL,
-  expires TIMESTAMPTZ NOT NULL,
-  token TEXT NOT NULL,
-
-  PRIMARY KEY (identifier, token)
-);
 
 CREATE TABLE IF NOT EXISTS users
 (
@@ -47,17 +39,6 @@ CREATE TABLE IF NOT EXISTS accounts
   UNIQUE (provider, "providerAccountId")
 );
 
-CREATE TABLE IF NOT EXISTS sessions
-(
-  id SERIAL,
-  "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  expires TIMESTAMPTZ NOT NULL,
-  "sessionToken" VARCHAR(255) NOT NULL,
-
-  PRIMARY KEY (id),
-  UNIQUE ("sessionToken")
-);
-
 -- Custom Email-OTP flow (Auth.js's stock Email provider sends magic links, not
 -- numeric codes — this app-specific table backs a Credentials provider instead).
 CREATE TABLE IF NOT EXISTS email_otp_codes
@@ -91,8 +72,6 @@ CREATE TABLE IF NOT EXISTS user_job_status
 
   UNIQUE ("userId", job_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_user_job_status_user ON user_job_status ("userId");
 
 -- Generic fixed-window rate limiter (web/lib/rate-limit.ts) — one counter row
 -- per bucket (e.g. "otp-request-ip", "add-company-ip"), key (e.g. an IP) and

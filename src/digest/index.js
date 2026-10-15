@@ -28,10 +28,7 @@ async function fetchShipped(since) {
   }
 }
 
-// `since` scopes this digest's window (its scrape_runs rows and the jobs
-// inserted). `companiesSince` can be set wider for companies and shipped PRs;
-// runDigest uses the same window for both.
-async function collectDigestData(pool, { since, companiesSince }) {
+async function collectDigestData(pool, { since }) {
   // Same score as web/lib/query.ts SCORE_EXPR, so "highest score" means what the feed shows.
   const { freshnessBoostHours, freshnessBoost } = config.intelligence.rules;
   const hours = Number(freshnessBoostHours) || 0;
@@ -90,7 +87,7 @@ async function collectDigestData(pool, { since, companiesSince }) {
       `SELECT c.name, c.source,
               (SELECT COUNT(*) FROM jobs j WHERE j.company = c.name AND j.is_active = TRUE)::int AS jobs
        FROM companies c WHERE c.created_at >= $1 ORDER BY jobs DESC, c.name`,
-      [companiesSince]
+      [since]
     ),
     pool.query(
       `SELECT COUNT(*)::int AS jobs,
@@ -100,7 +97,7 @@ async function collectDigestData(pool, { since, companiesSince }) {
     ),
     // The web app's auth table; absent in a scraper-only database.
     pool.query('SELECT COUNT(*)::int AS count FROM users').then((r) => r.rows[0].count, () => null),
-    fetchShipped(companiesSince),
+    fetchShipped(since),
     // Posts that failed or were skipped since the last digest (src/linkedin).
     pool.query('SELECT post_at, error FROM linkedin_posts WHERE error IS NOT NULL AND post_at >= $1 ORDER BY post_at', [since])
       .then((r) => r.rows, () => []),
@@ -156,7 +153,7 @@ async function lastDigestAt(pool) {
 async function runDigest(pool, { since, dryRun = false } = {}) {
   const until = new Date();
   if (!since) since = (await lastDigestAt(pool)) || new Date(until - 23 * 60 * 60 * 1000);
-  const data = await collectDigestData(pool, { since, companiesSince: since });
+  const data = await collectDigestData(pool, { since });
   const { copy, note } = await writeCopy(copyFacts(data));
   // The update, then the jobs post twice; a day without new software jobs
   // uses only the first slot, and a late digest only the slots still ahead.

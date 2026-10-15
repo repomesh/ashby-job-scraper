@@ -27,7 +27,7 @@ const SOURCE_REQUESTS = {
   ashby: {
     buildUrl: (slug) => {
       const url = new URL(`${config.fetch.sources.ashby.baseUrl}/${slug}`);
-      if (config.fetch.includeCompensation) url.searchParams.set('includeCompensation', 'true');
+      url.searchParams.set('includeCompensation', 'true');
       return url;
     },
     extractJobs: (data) => (Array.isArray(data?.jobs) ? data.jobs : null),

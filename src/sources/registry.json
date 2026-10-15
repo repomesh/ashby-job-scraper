@@ -2,1023 +2,731 @@
   {
     "company": "Ashby",
     "slug": "Ashby",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "OpenAI",
     "slug": "openai",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Notion",
     "slug": "Notion",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Ramp",
     "slug": "ramp",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Deel",
     "slug": "deel",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Linear",
     "slug": "linear",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Cursor",
     "slug": "cursor",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Snowflake",
     "slug": "snowflake",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Vanta",
     "slug": "vanta",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "PostHog",
     "slug": "posthog",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Replit",
     "slug": "replit",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Supabase",
     "slug": "supabase",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Zapier",
     "slug": "zapier",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Harvey",
     "slug": "harvey",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Stytch",
     "slug": "stytch",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "1Password",
     "slug": "1password",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Deliveroo",
     "slug": "deliveroo",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Trainline",
     "slug": "trainline",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Cohere",
     "slug": "cohere",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Lemonade",
     "slug": "lemonade",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Gorgias",
     "slug": "gorgias",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "UiPath",
     "slug": "uipath",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "HackerOne",
     "slug": "hackerone",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "FullStory",
     "slug": "fullstory",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Quora",
     "slug": "quora",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Multiverse",
     "slug": "multiverse",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Sequoia",
     "slug": "sequoia",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Help Scout",
     "slug": "helpscout",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Hopper",
     "slug": "hopper",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Oyster",
     "slug": "oyster",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Andela",
     "slug": "andela",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Leapsome",
     "slug": "leapsome",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Modern Treasury",
     "slug": "moderntreasury",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Monte Carlo",
     "slug": "montecarlodata",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Aurora Solar",
     "slug": "aurorasolar",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "EightSleep",
     "slug": "eightsleep",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Coder",
     "slug": "coder",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Form Energy",
     "slug": "formenergy",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "NETGEAR",
     "slug": "netgear",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Alan",
     "slug": "alan",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Dave",
     "slug": "dave",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Marshmallow",
     "slug": "marshmallow",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "GameChanger",
     "slug": "gamechanger",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "CoinTracker",
     "slug": "cointracker",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Nivoda",
     "slug": "nivoda",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "TheyDo",
     "slug": "theydo",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Zello",
     "slug": "zello",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Juniper Square",
     "slug": "junipersquare",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Rad AI",
     "slug": "radai",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Rula",
     "slug": "rula",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Sanity",
     "slug": "sanity",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Cryptio",
     "slug": "cryptio",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Decimal",
     "slug": "decimal",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Figma",
     "slug": "figma",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Confluent",
     "slug": "confluent",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "WorkOS",
     "slug": "workos",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Benchling",
     "slug": "benchling",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Perplexity",
     "slug": "perplexity",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Cognition",
     "slug": "cognition",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Character.AI",
     "slug": "character",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Writer",
     "slug": "writer",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Whatnot",
     "slug": "whatnot",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Airwallex",
     "slug": "airwallex",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Crusoe",
     "slug": "crusoe",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Exa",
     "slug": "exa",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Astral",
     "slug": "astral",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Langfuse",
     "slug": "langfuse",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Suno",
     "slug": "suno",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Semgrep",
     "slug": "semgrep",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Render",
     "slug": "render",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Patreon",
     "slug": "patreon",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Saronic Technologies",
     "slug": "saronic",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Mysten Labs",
     "slug": "mystenlabs",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Tennr",
     "slug": "tennr",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Replo",
     "slug": "replo",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Pennylane",
     "slug": "pennylane",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Polymarket",
     "slug": "polymarket",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "RevenueCat",
     "slug": "revenuecat",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Timescale",
     "slug": "timescale",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Benepass",
     "slug": "benepass",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "PermitFlow",
     "slug": "permitflow",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Taktile",
     "slug": "taktile",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Ledger",
     "slug": "ledger",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Enpal",
     "slug": "enpal",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "OpenRouter",
     "slug": "openrouter",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Shopify",
     "slug": "shopify",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Plaid",
     "slug": "plaid",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Clay",
     "slug": "clay",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Ironclad",
     "slug": "ironclad",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Lime",
     "slug": "lime",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Opendoor",
     "slug": "opendoor",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Duolingo",
     "slug": "duolingo",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Calm",
     "slug": "calm",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "incident.io",
     "slug": "incidentio",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Flock Safety",
     "slug": "flocksafety",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Brightline",
     "slug": "brightline",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Scribe",
     "slug": "scribehow",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "mParticle",
     "slug": "mparticle",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Teal",
     "slug": "teal",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Luma AI",
     "slug": "lumaai",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "WeTransfer",
     "slug": "wetransfer",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Solana Foundation",
     "slug": "solanafoundation",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Anthropic",
     "slug": "anthropic",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Scale AI",
     "slug": "scaleai",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Brex",
     "slug": "brex",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Reddit",
     "slug": "reddit",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Mercury",
     "slug": "mercury",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Retool",
     "slug": "retool",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Airtable",
     "slug": "airtable",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Marqeta",
     "slug": "marqeta",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Superhuman",
     "slug": "superhuman",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Boomi",
     "slug": "boomi",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Nango",
     "slug": "nango",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Vercel",
     "slug": "vercel",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Docker",
     "slug": "docker",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Illumio",
     "slug": "illumio",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Babbel",
     "slug": "babbel",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Mural",
     "slug": "mural",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Common Room",
     "slug": "commonroom",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Klue",
     "slug": "klue",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Maze",
     "slug": "mazedesign",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Front",
     "slug": "frontcareers",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Pylon",
     "slug": "pylon-labs",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Checkout.com",
     "slug": "checkout",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Lightspeed Commerce",
     "slug": "lightspeed-commerce",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Ironclad (alt)",
     "slug": "ironcladhq",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Workiva",
     "slug": "workiva",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Socure",
     "slug": "socure",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Instructure",
     "slug": "instructure",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Bestow",
     "slug": "bestow",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "SF Compute",
     "slug": "sfcompute",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Augment",
     "slug": "go-augment",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Gen Digital",
     "slug": "gen-digital",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Weave",
     "slug": "workweave",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Reflection AI",
     "slug": "reflectionai",
-    "source": "ashby",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "ashby"
   },
   {
     "company": "Ro",
     "slug": "ro",
-    "source": "lever",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "lever"
   },
   {
     "company": "Wealthfront",
     "slug": "wealthfront",
-    "source": "lever",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "lever"
   },
   {
     "company": "Zeta",
     "slug": "zeta",
-    "source": "lever",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "lever"
   },
   {
     "company": "AngelList (Wellfound)",
     "slug": "angellist",
-    "source": "lever",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "lever"
   },
   {
     "company": "Tala",
     "slug": "tala",
-    "source": "lever",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "lever"
   },
   {
     "company": "GitLab",
     "slug": "gitlab",
-    "source": "greenhouse",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "greenhouse"
   },
   {
     "company": "Coinbase",
     "slug": "coinbase",
-    "source": "greenhouse",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "greenhouse"
   },
   {
     "company": "Affirm",
     "slug": "affirm",
-    "source": "greenhouse",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "greenhouse"
   },
   {
     "company": "Robinhood",
     "slug": "robinhood",
-    "source": "greenhouse",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "greenhouse"
   },
   {
     "company": "Discord",
     "slug": "discord",
-    "source": "greenhouse",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "greenhouse"
   },
   {
     "company": "Greenhouse",
     "slug": "greenhouse",
-    "source": "greenhouse",
-    "enabled": true,
-    "frequencyHours": 12
+    "source": "greenhouse"
   }
 ]

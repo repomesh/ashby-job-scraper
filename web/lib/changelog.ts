@@ -9,6 +9,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: "add-workday-fix",
+    date: "2026-10-15",
+    title: "Adding Workday companies works again, and job scores match",
+    description:
+      "Pasting a Workday careers link (or a North American Teamtailor one) into Add a company no longer fails. A job's own page now shows the same match score as the job list.",
+  },
+  {
     id: "new-home",
     date: "2026-10-13",
     title: "Ashby Jobs has a new home: jobs.whatrunsindia.com",

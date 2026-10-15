@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -5,7 +6,6 @@ import Credentials from "next-auth/providers/credentials";
 import PostgresAdapter from "@auth/pg-adapter";
 import { getDbPool, query } from "@/lib/db";
 import { verifyCode } from "@/lib/otp";
-import { generatedAvatarUrl } from "@/lib/avatar";
 import { sendWelcomeEmail, notifyAdminOfNewSignup } from "@/lib/mailer";
 
 interface DbUser {
@@ -52,7 +52,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { rows } = await query<DbUser>(`SELECT id, name, email, image FROM users WHERE email = $1`, [email]);
         let user = rows[0];
         if (!user) {
-          const avatar = generatedAvatarUrl(email);
+          // Fetched on demand, never stored — DiceBear renders deterministically
+          // from the seed, so the same email always gets the same placeholder.
+          const seed = crypto.createHash("sha256").update(email).digest("hex");
+          const avatar = `https://api.dicebear.com/9.x/glass/svg?seed=${seed}`;
           const inserted = await query<DbUser>(
             `INSERT INTO users (email, image, avatar_source, "emailVerified")
              VALUES ($1, $2, 'generated', NOW())
