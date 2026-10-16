@@ -112,3 +112,16 @@ jobs:
           # and rolls back otherwise, so a green step here means the new version is live.
           printf '%s\n' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             "ubuntu@$WEB_VM_HOST" "$GITHUB_SHA"
+
+      # Cloudflare keeps job pages for a day and the feed for an hour, and every build renames its JS
+      # files: without a purge, cached HTML could point at files the new image no longer has.
+      # The token can only purge this zone's cache.
+      - name: Purge the Cloudflare cache
+        env:
+          CF_PURGE_TOKEN: ${{ secrets.CLOUDFLARE_PURGE_TOKEN }}
+        run: |
+          [ -n "$CF_PURGE_TOKEN" ] || { echo "::warning::no CLOUDFLARE_PURGE_TOKEN secret; cache not purged"; exit 0; }
+          curl -fsS --max-time 20 -X POST -H "Authorization: Bearer $CF_PURGE_TOKEN" -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/zones/db4ee4cf3f2874b65a7ea8da743d24a9/purge_cache" \
+            --data '{"hosts":["jobs.whatrunsindia.com"]}' -o /dev/null \
+            || echo "::warning::Cloudflare purge failed; cached pages refresh on their own within a day"

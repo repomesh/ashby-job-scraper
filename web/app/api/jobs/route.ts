@@ -130,10 +130,12 @@ export async function GET(request: NextRequest) {
 		filters.limit = limit;
 
 		const result = await getJobs(filters);
+		// An hour at the edge, like the feed page: getJobs' data cache refreshes hourly anyway, and
+		// each deploy purges Cloudflare (deploy-web.yml).
 		return NextResponse.json(result, {
 			headers: {
 				'Cache-Control':
-					'public, s-maxage=120, stale-while-revalidate=300',
+					'public, s-maxage=3600, stale-while-revalidate=300',
 			},
 		});
 	} catch (err) {
