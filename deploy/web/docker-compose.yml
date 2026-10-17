@@ -43,3 +43,40 @@ services:
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
+  # Visitor analytics with a live "online" count. Reached only through the tunnel (stats.whatrunsindia.com -> http://umami:3000).
+  # Secrets live in umami.env on the server (POSTGRES_DB/USER/PASSWORD, DATABASE_URL, APP_SECRET), not in git.
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    env_file: umami.env
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    mem_limit: 384m
+    cpus: 0.5
+    pids_limit: 256
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+  umami-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    env_file: umami.env
+    volumes:
+      - umami-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+volumes:
+  umami-db-data:
