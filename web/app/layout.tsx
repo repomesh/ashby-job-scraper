@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { PROVIDER_NAMES } from "@/lib/providers";
@@ -71,6 +72,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        <Script
+          src="https://stats.whatrunsindia.com/script.js"
+          data-website-id="56758f43-f995-44cd-a81d-1b0d49a93b5c"
+          data-domains="jobs.whatrunsindia.com"
+        />
       </body>
     </html>
   );
